@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Ages of the Realm</title>
+  <meta name="description" content="A text-based, story-driven city builder that evolves through the ages. Plays fully offline." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1a1410" />
+
+  <!-- iOS home-screen app -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Realm" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-era="medieval">
+  <!-- ====== START SCREEN ====== -->
+  <section id="start-screen" class="screen">
+    <div class="start-card">
+      <h1 class="game-title">Ages of the Realm</h1>
+      <p class="tagline">A village. A story. A thousand years ahead of you.</p>
+      <div class="start-buttons">
+        <button id="btn-continue" class="btn btn-primary hidden">Continue</button>
+        <button id="btn-new-game" class="btn btn-primary">New Game</button>
+        <button id="btn-import" class="btn btn-ghost">Import Save</button>
+      </div>
+      <p class="start-foot">Builds offline. Add to your home screen to play anywhere.</p>
+    </div>
+  </section>
+
+  <!-- ====== GAME SCREEN ====== -->
+  <main id="game-screen" class="screen hidden">
+    <!-- Top: era + year + resources -->
+    <header id="topbar">
+      <div class="era-line">
+        <span id="era-name">Medieval Age</span>
+        <span id="settlement-name">Oakhollow</span>
+        <span id="year-label">Year 1</span>
+      </div>
+      <div id="resource-bar" class="resource-bar"><!-- rendered --></div>
+      <div id="era-progress-wrap">
+        <div id="era-progress-label">Path to the next age</div>
+        <div class="progress-track"><div id="era-progress-fill" class="progress-fill"></div></div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav id="tabs">
+      <button class="tab active" data-tab="build">Build</button>
+      <button class="tab" data-tab="tech">Research</button>
+      <button class="tab" data-tab="city">City</button>
+      <button class="tab" data-tab="log">Chronicle</button>
+    </nav>
+
+    <!-- Panels -->
+    <div id="panels">
+      <section id="tab-build" class="panel active"><div id="building-list" class="card-list"></div></section>
+      <section id="tab-tech" class="panel"><div id="tech-list" class="card-list"></div></section>
+      <section id="tab-city" class="panel"><div id="city-summary"></div></section>
+      <section id="tab-log" class="panel"><div id="log-feed" class="log-feed"></div></section>
+    </div>
+
+    <!-- Bottom control bar -->
+    <footer id="controlbar">
+      <button id="btn-menu" class="btn btn-ghost btn-icon" title="Menu">&#9776;</button>
+      <button id="btn-advance" class="btn btn-primary btn-advance">Advance Year &#9654;</button>
+      <button id="btn-auto" class="btn btn-ghost" title="Auto-advance">Auto: Off</button>
+    </footer>
+  </main>
+
+  <!-- ====== EVENT MODAL ====== -->
+  <div id="event-overlay" class="overlay hidden">
+    <div class="event-modal">
+      <h2 id="event-title">An Event</h2>
+      <p id="event-body">Something is happening.</p>
+      <div id="event-choices" class="event-choices"></div>
+    </div>
+  </div>
+
+  <!-- ====== MENU MODAL ====== -->
+  <div id="menu-overlay" class="overlay hidden">
+    <div class="event-modal">
+      <h2>Menu</h2>
+      <div class="menu-actions">
+        <button id="btn-save" class="btn btn-primary">Save Game</button>
+        <button id="btn-export" class="btn btn-ghost">Export Save (copy)</button>
+        <button id="btn-import-2" class="btn btn-ghost">Import Save</button>
+        <button id="btn-restart" class="btn btn-danger">Abandon &amp; Restart</button>
+        <button id="btn-close-menu" class="btn btn-ghost">Back to Game</button>
+      </div>
+      <p id="menu-status" class="menu-status"></p>
+    </div>
+  </div>
+
+  <!-- ====== TOAST ====== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Data modules -->
+  <script src="js/data/resources.js"></script>
+  <script src="js/data/eras.js"></script>
+  <script src="js/data/buildings.js"></script>
+  <script src="js/data/tech.js"></script>
+  <script src="js/data/events.js"></script>
+  <!-- Engine + UI + bootstrap -->
+  <script src="js/save.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
