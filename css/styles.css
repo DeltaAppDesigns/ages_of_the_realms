@@ -24,13 +24,17 @@ body[data-era="modern"]      { --accent:#34c7c0; --accent-2:#7fe3dd; --bg:#0c111
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
+/* Paint the root (and the iOS home-indicator safe area) dark, not white. */
+html { background-color: #1a1410; }
 body {
   font-family: var(--font);
-  background: radial-gradient(1200px 600px at 50% -10%, var(--bg-2), var(--bg)) fixed;
+  background-color: var(--bg);
+  background-image: radial-gradient(1200px 600px at 50% -10%, var(--bg-2), var(--bg));
+  background-attachment: fixed;
   color: var(--ink);
   line-height: 1.45;
   overflow: hidden;
-  transition: background .6s ease;
+  transition: background-color .6s ease;
 }
 
 .screen { height: 100dvh; display: flex; flex-direction: column; }

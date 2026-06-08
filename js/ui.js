@@ -205,8 +205,14 @@ window.UI = (function () {
     updateAdvanceState();
   }
 
+  const ERA_BG = { medieval: '#1a1410', renaissance: '#15161f', industrial: '#14130f', modern: '#0c1116' };
   function setEraTheme() {
-    document.body.setAttribute('data-era', ERAS[Engine.state.eraIndex].id);
+    const era = ERAS[Engine.state.eraIndex].id;
+    document.body.setAttribute('data-era', era);
+    // keep the root (and iOS home-indicator safe area) matching the era
+    document.documentElement.style.backgroundColor = ERA_BG[era] || '#1a1410';
+    const tc = document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute('content', ERA_BG[era] || '#1a1410');
   }
 
   function updateAdvanceState() {

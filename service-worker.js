@@ -1,5 +1,5 @@
 /* Ages of the Realm — offline service worker (cache-first). */
-const CACHE = 'realm-v1';
+const CACHE = 'realm-v2';
 
 /* All paths are relative so the app works from any GitHub Pages subpath. */
 const ASSETS = [
