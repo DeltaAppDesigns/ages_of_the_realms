@@ -184,29 +184,126 @@ window.UI = (function () {
     ).join('');
   }
 
-  /* ---------- city map (top-down emoji tiles) ---------- */
+  /* ---------- city map (top-down canvas) ---------- */
+  // Terrain palette per era: ground (lots), grass tint, and road colour.
+  const TERRAIN = {
+    medieval:    { lot: '#5c7a3f', grass: '#557235', road: '#6b573a' },
+    renaissance: { lot: '#56743c', grass: '#4f6c36', road: '#7a6648' },
+    industrial:  { lot: '#5f5a4a', grass: '#565142', road: '#3b362c' },
+    modern:      { lot: '#3c4753', grass: '#36404b', road: '#262e37' },
+    information: { lot: '#1f2c3a', grass: '#1b2733', road: '#121d27' },
+    space:       { lot: '#241d3e', grass: '#1e1834', road: '#100c22' }
+  };
+  // Building category -> colours. Derived from each building's role (see mapKind).
+  const KIND = {
+    res:   { body: '#ddcfb4', roof: '#b65140', detail: '#3a2c22' },
+    farm:  { body: '#6fa84a', roof: '#557f38', detail: '#456a2c' },
+    ind:   { body: '#8c919a', roof: '#5f636b', detail: '#cfa14a' },
+    com:   { body: '#e0b85a', roof: '#b98a30', detail: '#7a5b1c' },
+    sci:   { body: '#cdd6e2', roof: '#5b8fb0', detail: '#7fd0e8' },
+    civic: { body: '#cdbce0', roof: '#8a5fb0', detail: '#efe6d6' },
+    misc:  { body: '#b9ab93', roof: '#7a6f5c', detail: '#3a3228' }
+  };
+  function mapKind(b) {
+    if (b.housing) return 'res';
+    const p = b.produces || {};
+    if (p.food) return 'farm';
+    if (p.knowledge) return 'sci';
+    if (p.materials) return 'ind';
+    if (p.coin) return 'com';
+    if ((b.happiness || 0) > 0) return 'civic';
+    return 'misc';
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawBuilding(ctx, b, x, y, lot) {
+    const k = mapKind(b), c = KIND[k];
+    const m = Math.round(lot * 0.18);
+    const bx = x + m, by = y + m, bw = lot - 2 * m, bh = lot - 2 * m;
+    ctx.save();
+    if (k === 'farm') {
+      roundRect(ctx, bx, by, bw, bh, 3); ctx.fillStyle = c.body; ctx.fill();
+      ctx.strokeStyle = c.detail; ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) { const fy = by + (bh * i) / 4; ctx.beginPath(); ctx.moveTo(bx + 2, fy); ctx.lineTo(bx + bw - 2, fy); ctx.stroke(); }
+    } else if (k === 'res') {
+      const wallH = bh * 0.6, roofH = bh - wallH;
+      ctx.fillStyle = c.body; ctx.fillRect(bx, by + roofH, bw, wallH);            // wall
+      ctx.fillStyle = c.roof; ctx.beginPath();                                     // peaked roof
+      ctx.moveTo(bx - 1, by + roofH); ctx.lineTo(bx + bw / 2, by); ctx.lineTo(bx + bw + 1, by + roofH); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = c.detail;                                                    // window
+      ctx.fillRect(bx + bw / 2 - 1.5, by + roofH + wallH * 0.35, 3, 3);
+    } else if (k === 'ind') {
+      roundRect(ctx, bx, by, bw, bh, 2); ctx.fillStyle = c.body; ctx.fill();
+      ctx.fillStyle = c.roof; ctx.fillRect(bx, by, bw, bh * 0.28);                 // dark roof strip
+      ctx.fillStyle = c.roof; ctx.fillRect(bx + bw * 0.6, by - bh * 0.22, bw * 0.18, bh * 0.32); // chimney
+      ctx.fillStyle = 'rgba(220,220,220,.5)'; ctx.beginPath(); ctx.arc(bx + bw * 0.69, by - bh * 0.22, bw * 0.13, 0, 7); ctx.fill(); // smoke
+    } else if (k === 'sci') {
+      roundRect(ctx, bx, by, bw, bh, 3); ctx.fillStyle = c.body; ctx.fill();
+      ctx.fillStyle = c.detail;                                                    // glass windows
+      for (let r = 0; r < 2; r++) for (let cc = 0; cc < 2; cc++) ctx.fillRect(bx + 3 + cc * (bw / 2), by + 4 + r * (bh / 2.4), bw / 2 - 5, bh / 3.4);
+      ctx.strokeStyle = c.roof; ctx.lineWidth = 1; ctx.beginPath();                // antenna
+      ctx.moveTo(bx + bw / 2, by); ctx.lineTo(bx + bw / 2, by - bh * 0.25); ctx.stroke();
+      ctx.fillStyle = c.detail; ctx.beginPath(); ctx.arc(bx + bw / 2, by - bh * 0.25, 1.6, 0, 7); ctx.fill();
+    } else if (k === 'civic') {
+      const wallH = bh * 0.62;
+      ctx.fillStyle = c.body; ctx.fillRect(bx, by + (bh - wallH), bw, wallH);
+      ctx.fillStyle = c.roof; ctx.beginPath();                                     // dome
+      ctx.arc(bx + bw / 2, by + (bh - wallH), bw / 2, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = c.detail; ctx.fillRect(bx + bw / 2 - 0.8, by + (bh - wallH) - bw / 2 - 3, 1.6, 3); // spire
+    } else if (k === 'com') {
+      roundRect(ctx, bx, by, bw, bh, 2); ctx.fillStyle = c.body; ctx.fill();
+      ctx.fillStyle = c.roof; ctx.fillRect(bx, by + bh * 0.42, bw, bh * 0.16);     // sign band
+      ctx.fillStyle = c.detail; ctx.fillRect(bx + bw * 0.4, by + bh * 0.66, bw * 0.2, bh * 0.34); // door
+    } else {
+      roundRect(ctx, bx, by, bw, bh, 2); ctx.fillStyle = c.body; ctx.fill();
+      ctx.fillStyle = c.roof; ctx.fillRect(bx, by, bw, bh * 0.3);
+    }
+    ctx.restore();
+  }
   function renderMap() {
-    const s = Engine.state;
+    const s = Engine.state; if (!s) return;
     const tiles = [];
-    // BUILDINGS is era-ordered, so iterating it clusters similar structures into "districts"
-    BUILDINGS.forEach((b) => {
-      const n = s.buildings[b.id] || 0;
-      for (let i = 0; i < n; i++) tiles.push({ e: b.icon, name: b.name });
-    });
+    BUILDINGS.forEach((b) => { const n = s.buildings[b.id] || 0; for (let i = 0; i < n; i++) tiles.push(b); });
     const total = tiles.length;
     const types = Object.keys(s.buildings).filter((k) => s.buildings[k] > 0).length;
     $('map-head').innerHTML = '<b>' + s.settlement + '</b> · ' + ERAS[s.eraIndex].name +
       ' · ' + total + ' buildings (' + types + ' kinds) · pop ' + Math.round(s.res.population);
 
-    if (!total) {
-      $('city-map').innerHTML = '<div class="map-empty">Your land is empty. Build something on the Build tab to watch your realm take shape here.</div>';
-      return;
+    const canvas = $('map-canvas');
+    if (!canvas || typeof canvas.getContext !== 'function') return;
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const host = canvas.parentElement || canvas;
+    const cssW = Math.max(260, (host.clientWidth || 320));
+    const lot = 46, gap = 8, pad = 10;
+    const cols = Math.max(3, Math.floor((cssW - pad * 2 + gap) / (lot + gap)));
+    const rows = Math.max(4, Math.ceil(Math.max(total, 1) / cols));
+    const cssH = pad * 2 + rows * lot + (rows - 1) * gap;
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const T = TERRAIN[ERAS[s.eraIndex].id] || TERRAIN.medieval;
+    ctx.fillStyle = T.road; ctx.fillRect(0, 0, cssW, cssH);                        // streets underneath
+    for (let i = 0; i < rows * cols; i++) {
+      const col = i % cols, row = (i / cols) | 0;
+      const x = pad + col * (lot + gap), y = pad + row * (lot + gap);
+      roundRect(ctx, x, y, lot, lot, 6);                                           // grass lot
+      ctx.fillStyle = (i % 2 === (row % 2)) ? T.lot : T.grass; ctx.fill();
+      if (i < total) drawBuilding(ctx, tiles[i], x, y, lot);
     }
-    const ground = ERA_GROUND[ERAS[s.eraIndex].id] || '🌿';
-    const pad = Math.max(10, Math.ceil(total * 0.4));
-    let html = tiles.map((t) => '<div class="tile bld" title="' + t.name + '">' + t.e + '</div>').join('');
-    for (let i = 0; i < pad; i++) html += '<div class="tile ground">' + ground + '</div>';
-    $('city-map').innerHTML = html;
+    if (!total) {
+      ctx.fillStyle = 'rgba(239,230,214,.7)'; ctx.font = '13px -apple-system, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Your land awaits — build to populate the map.', cssW / 2, cssH / 2);
+    }
   }
 
   /* ---------- tabs ---------- */

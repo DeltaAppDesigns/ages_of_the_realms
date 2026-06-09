@@ -37,7 +37,8 @@ window.Engine = (function () {
     state = {
       settlement: name || SETTLEMENT_NAMES[Math.floor(Math.random() * SETTLEMENT_NAMES.length)],
       year: 1, eraIndex: 0,
-      res: res, buildings: {}, tech: {}, flags: {},
+      // a small starter village so the opening isn't bare (homes + food + economy)
+      res: res, buildings: { hut: 2, farm: 1, lumber_camp: 1, market: 1 }, tech: {}, flags: {},
       log: [], firedEvents: {}, lastDeltas: {}, stats: {},
       auto: false, gameOver: false, victory: false
     };
@@ -104,13 +105,13 @@ window.Engine = (function () {
     const dMat = prod.materials - upk.materials;
     const dKno = prod.knowledge;
 
-    // mood target
+    // mood target (penalties are capped so mood can dip but never instantly collapse)
     let target = T.HAPPINESS_BASE + hapBuild + hapFlat;
     const homeless = Math.max(0, pop - housing);
-    target -= homeless * 2.5;
+    target -= Math.min(30, homeless * 2.5);               // overcrowding, capped
     const idle = jobs > 0 ? Math.max(0, pop - jobs) : pop;
-    target -= Math.min(20, (idle / Math.max(1, pop)) * 25);
-    if (dFood < 0) target -= 15;
+    target -= Math.min(12, (idle / Math.max(1, pop)) * 18); // unemployment, capped & gentler
+    if (dFood < 0) target -= 15;                           // active food shortfall
     target = Math.max(0, Math.min(100, target));
     const dHap = (target - s.res.happiness) * T.HAPPINESS_DRIFT;
 

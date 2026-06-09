@@ -128,6 +128,9 @@ window.App = (function () {
     });
     $('btn-close-menu').addEventListener('click', closeMenu);
 
+    // redraw the canvas map when the window/orientation changes
+    window.addEventListener('resize', () => { if (Engine.state) UI.renderActive(); });
+
     // loop
     autoTimer = setInterval(tick, 1600);
   }

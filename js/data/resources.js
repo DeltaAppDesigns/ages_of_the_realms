@@ -5,7 +5,7 @@ window.GAME_RESOURCES = [
   { id: 'coin',       name: 'Coin',      icon: '🪙', start: 70,  desc: 'Pays for buildings and upkeep.' },
   { id: 'materials',  name: 'Materials', icon: '🪵', start: 95,  desc: 'Timber, stone and steel for construction.' },
   { id: 'population', name: 'People',    icon: '👤', start: 10,  desc: 'Workers fill jobs. They need food and housing.' },
-  { id: 'happiness',  name: 'Mood',      icon: '😊', start: 75,  desc: 'Public morale, 0–100. Low mood shrinks your city.' },
+  { id: 'happiness',  name: 'Mood',      icon: '😊', start: 65,  desc: 'Public morale, 0–100. Low mood shrinks your city.' },
   { id: 'knowledge',  name: 'Knowledge', icon: '📜', start: 5,   desc: 'Spent on research to unlock new ages.' }
 ];
 

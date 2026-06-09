@@ -151,26 +151,14 @@ body {
 .log-bad { border-left: 3px solid var(--bad); }
 .log-story { border-left: 3px solid var(--accent); }
 
-/* ===== City Map ===== */
+/* ===== City Map (canvas) ===== */
 #map-head { font-size: 13px; color: var(--ink-dim); margin-bottom: 10px; }
 #map-head b { color: var(--accent-2); }
 .city-map {
-  display: grid; gap: 3px;
-  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-  background: var(--bg-2); border: 1px solid var(--line);
-  border-radius: 12px; padding: 8px;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: var(--bg-2); line-height: 0;
 }
-.tile {
-  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  border-radius: 5px; line-height: 1; user-select: none;
-}
-.tile.bld {
-  font-size: 17px; background: var(--panel-2); border: 1px solid var(--line);
-  box-shadow: 0 1px 0 rgba(0,0,0,.3); animation: pop .25s ease;
-}
-.tile.ground { font-size: 13px; opacity: .35; }
-@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.map-empty { color: var(--ink-dim); font-size: 13px; text-align: center; padding: 24px 8px; }
+#map-canvas { display: block; width: 100%; }
 
 /* ===== Control bar ===== */
 #controlbar {
