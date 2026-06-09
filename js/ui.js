@@ -1,4 +1,4 @@
-/* build 2026-06-08b */
+/* build 2026-06-08e */
 /* Rendering layer. Reads Engine.state; delegates interactions to window.App. */
 window.UI = (function () {
   const RES = window.GAME_RESOURCES;
@@ -194,16 +194,9 @@ window.UI = (function () {
     information: { lot: '#1f2c3a', grass: '#1b2733', road: '#121d27' },
     space:       { lot: '#241d3e', grass: '#1e1834', road: '#100c22' }
   };
-  // Top-down rooftop colours per building role (flat "map" look, not icons).
-  const ROOF = {
-    res:   { f: '#bb6a4a', a: '#974f37' },
-    com:   { f: '#4e8cbf', a: '#386b96' },
-    ind:   { f: '#8c9099', a: '#666a73' },
-    sci:   { f: '#5fb0c9', a: '#43899f' },
-    civic: { f: '#b98fd6', a: '#9466b8' },
-    power: { f: '#3fa898', a: '#2c8273' },
-    misc:  { f: '#9a8f76', a: '#766c57' }
-  };
+  // Residential wall/roof colour by era: thatch → tile → brick → concrete → glass → white.
+  const ERA_RES = ['#a8814c', '#b5503f', '#8a4a3a', '#9aa6b4', '#6fb1c2', '#dfe4ee'];
+  const eraIndexById = (id) => { const i = ERAS.findIndex((e) => e.id === id); return i < 0 ? 0 : i; };
   function mapKind(b) {
     if (b.id === 'park') return 'park';
     if (b.id === 'solar_array') return 'solar';
@@ -227,76 +220,102 @@ window.UI = (function () {
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  // Residential rooftop colour by era: thatch → tile → brick → concrete → glass → white.
-  const ERA_RES = ['#9c7a4a', '#b5503f', '#8a4a3a', '#7d8a99', '#5a9aa8', '#cdd3e0'];
-  const ERA_RES_A = ['#7c5e34', '#8f3e30', '#6c382b', '#5d6877', '#427883', '#9aa3b8'];
-  const eraIndexById = (id) => { const i = ERAS.findIndex((e) => e.id === id); return i < 0 ? 0 : i; };
-
-  // Draw one parcel as a flat, top-down footprint. Style evolves with the building's era.
-  function drawBuilding(ctx, b, x, y, sz) {
+  // Footprint + silhouette spec per building. w,d = footprint; h = oblique height.
+  function bSpec(b) {
     const k = mapKind(b);
-    const i = 1.4, fx = x + i, fy = y + i, fw = sz - 2 * i, fh = sz - 2 * i;
+    if (k === 'farm')  return { k, shape: 'field',   w: 30, d: 22, h: 0 };
+    if (k === 'park')  return { k, shape: 'park',    w: 26, d: 22, h: 0 };
+    if (k === 'solar') return { k, shape: 'solar',   w: 26, d: 20, h: 0 };
+    if (k === 'res') {
+      const housing = b.housing || 4;
+      if (housing <= 8) return { k, shape: 'house', w: 16, d: 13, h: 10 };
+      const t = Math.min(1, (housing - 8) / 60);
+      return { k, shape: 'tower', w: 14 + t * 7, d: 12 + t * 4, h: 22 + t * 42 };
+    }
+    if (k === 'ind')   return { k, shape: 'factory', w: 28, d: 18, h: 13 };
+    if (k === 'com')   return { k, shape: 'shop',    w: 20, d: 15, h: 13 };
+    if (k === 'sci')   return { k, shape: 'lab',     w: 22, d: 16, h: 19 };
+    if (k === 'civic') return { k, shape: 'church',  w: 18, d: 15, h: 15 };
+    if (k === 'power') return { k, shape: 'plant',   w: 24, d: 20, h: 16 };
+    return { k, shape: 'house', w: 16, d: 13, h: 10 };
+  }
+  // Draw a distinct, lightly-3D building centred at base point (X,Y), scaled by `scale`.
+  function drawBuilding(ctx, b, X, Y, scale) {
+    const sp = bSpec(b);
+    const w = sp.w * scale, d = sp.d * scale, h = sp.h * scale, eraIdx = eraIndexById(b.era);
+    const S = (v) => v * scale;
     ctx.save();
-    if (k === 'farm') {                                   // cropland (era-agnostic)
-      roundRect(ctx, fx, fy, fw, fh, 2); ctx.fillStyle = '#6f9b43'; ctx.fill();
+    if (sp.shape === 'field') {                           // crop field + barn
+      ctx.fillStyle = '#6f9b43'; ctx.fillRect(X - w / 2, Y - d / 2, w, d);
       ctx.strokeStyle = '#577d32'; ctx.lineWidth = 1;
-      for (let r = 1; r <= 3; r++) { const ly = fy + (fh * r) / 4; ctx.beginPath(); ctx.moveTo(fx + 1.5, ly); ctx.lineTo(fx + fw - 1.5, ly); ctx.stroke(); }
-      ctx.strokeStyle = 'rgba(0,0,0,.18)'; roundRect(ctx, fx, fy, fw, fh, 2); ctx.stroke();
+      for (let r = 1; r <= 3; r++) { const ly = Y - d / 2 + d * r / 4; ctx.beginPath(); ctx.moveTo(X - w / 2 + 1, ly); ctx.lineTo(X + w / 2 - 1, ly); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.strokeRect(X - w / 2, Y - d / 2, w, d);
+      ctx.fillStyle = '#9a5a3a'; ctx.fillRect(X + w / 2 - S(7), Y - d / 2 + 1, S(6), S(5));
       ctx.restore(); return;
     }
-    if (k === 'park') {
-      roundRect(ctx, fx, fy, fw, fh, 4); ctx.fillStyle = '#4f8a3f'; ctx.fill();
-      [[0.32, 0.34], [0.7, 0.42], [0.48, 0.72]].forEach((t) => drawTree(ctx, fx + fw * t[0], fy + fh * t[1], 3, 'medieval'));
+    if (sp.shape === 'park') {
+      ctx.fillStyle = '#4f8a3f'; roundRect(ctx, X - w / 2, Y - d / 2, w, d, S(4)); ctx.fill();
+      [[0.3, 0.35], [0.7, 0.4], [0.5, 0.72]].forEach((t) => drawTree(ctx, X - w / 2 + w * t[0], Y - d / 2 + d * t[1], S(3.2), 'medieval'));
       ctx.restore(); return;
     }
-    if (k === 'solar') {
-      roundRect(ctx, fx, fy, fw, fh, 2); ctx.fillStyle = '#16263d'; ctx.fill();
+    if (sp.shape === 'solar') {
+      ctx.fillStyle = '#16263d'; ctx.fillRect(X - w / 2, Y - d / 2, w, d);
       ctx.fillStyle = '#3a6ea5';
-      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) ctx.fillRect(fx + 2 + c * (fw - 4) / 3, fy + 2 + r * (fh - 4) / 3, (fw - 4) / 3 - 1.5, (fh - 4) / 3 - 1.5);
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) ctx.fillRect(X - w / 2 + 2 + c * (w - 4) / 3, Y - d / 2 + 2 + r * (d - 4) / 3, (w - 4) / 3 - 1.5, (d - 4) / 3 - 1.5);
       ctx.restore(); return;
     }
+    // ground shadow for raised buildings
+    ctx.fillStyle = 'rgba(0,0,0,.16)';
+    ctx.beginPath(); ctx.ellipse(X + d * 0.12, Y, w * 0.6, d * 0.5, 0, 0, 7); ctx.fill();
+    const wallStroke = () => { ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.strokeRect(X - w / 2, Y - h, w, h); };
 
-    // --- general buildings: geometry & palette shift with the era ---
-    const eraIdx = eraIndexById(b.era);
-    const gen = eraIdx <= 1 ? 0 : (eraIdx <= 3 ? 1 : 2); // old / industrial-modern / future
-    const ins = gen === 0 ? 3 : 1.4;                     // older = smaller footprint, more green
-    const rad = gen === 2 ? 5 : 1.6;                     // future = rounded corners
-    const gx = x + ins, gy = y + ins, gw = sz - 2 * ins, gh = sz - 2 * ins;
-    const col = ROOF[k] || ROOF.misc;
-    const fill = (k === 'res') ? ERA_RES[eraIdx] : col.f;
-    const acc = (k === 'res') ? ERA_RES_A[eraIdx] : col.a;
-    roundRect(ctx, gx, gy, gw, gh, rad); ctx.fillStyle = fill; ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 1; roundRect(ctx, gx, gy, gw, gh, rad); ctx.stroke();
-
-    if (gen === 0) {                                      // pitched roof (ridge + hips)
-      ctx.strokeStyle = acc; ctx.lineWidth = 1.3;
-      ctx.beginPath(); ctx.moveTo(gx + gw / 2, gy + 2); ctx.lineTo(gx + gw / 2, gy + gh - 2); ctx.stroke();
-      ctx.lineWidth = 0.8; ctx.beginPath();
-      ctx.moveTo(gx, gy); ctx.lineTo(gx + gw / 2, gy + gh / 2);
-      ctx.moveTo(gx + gw, gy); ctx.lineTo(gx + gw / 2, gy + gh / 2); ctx.stroke();
-    } else if (k === 'res') {                             // flat residential: window grid
-      ctx.fillStyle = acc;
-      for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) ctx.fillRect(gx + gw * (0.2 + c * 0.36), gy + gh * (0.22 + r * 0.36), gw * 0.22, gh * 0.22);
-    } else if (k === 'ind') {                             // rooftop vents
-      ctx.fillStyle = acc; ctx.fillRect(gx + gw * 0.2, gy + gh * 0.28, gw * 0.2, gh * 0.2); ctx.fillRect(gx + gw * 0.55, gy + gh * 0.52, gw * 0.22, gh * 0.22);
-    } else if (k === 'com') {                             // skylight
-      ctx.fillStyle = 'rgba(255,255,255,.32)'; ctx.fillRect(gx + gw * 0.27, gy + gh * 0.27, gw * 0.46, gh * 0.46);
-    } else if (k === 'sci') {                             // rooftop equipment
-      ctx.fillStyle = acc; ctx.fillRect(gx + gw * 0.28, gy + gh * 0.28, gw * 0.44, gh * 0.26);
-      ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fillRect(gx + gw * 0.28, gy + gh * 0.6, gw * 0.44, gh * 0.12);
-    } else if (k === 'civic') {                           // dome
-      ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(gx + gw / 2, gy + gh / 2, Math.min(gw, gh) * 0.24, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(gx + gw / 2, gy + gh / 2, 1.4, 0, 7); ctx.fill();
-    } else if (k === 'power') {                           // cooling tower
-      ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(gx + gw / 2, gy + gh / 2, Math.min(gw, gh) * 0.3, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(gx + gw / 2, gy + gh / 2, Math.min(gw, gh) * 0.14, 0, 7); ctx.fill();
-    }
-    if (gen === 2) {                                      // future sheen
-      ctx.fillStyle = 'rgba(255,255,255,.14)'; roundRect(ctx, gx + 1, gy + 1, gw * 0.5, gh * 0.3, 3); ctx.fill();
+    if (sp.shape === 'house') {                           // small gabled cottage
+      ctx.fillStyle = '#dccfb6'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+      ctx.fillStyle = ERA_RES[eraIdx]; ctx.beginPath();
+      ctx.moveTo(X - w / 2 - 1, Y - h); ctx.lineTo(X, Y - h - w * 0.55); ctx.lineTo(X + w / 2 + 1, Y - h); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(X - w * 0.12, Y - h * 0.55, w * 0.24, h * 0.55);
+    } else if (sp.shape === 'tower') {                    // tall apartment / skyscraper
+      ctx.fillStyle = ERA_RES[eraIdx]; ctx.fillRect(X - w / 2, Y - h, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(X + w / 2 - w * 0.18, Y - h, w * 0.18, h); wallStroke();
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(X - w / 2, Y - h, w, Math.max(1.5, h * 0.05));
+      ctx.fillStyle = 'rgba(20,30,45,.5)';
+      const rows = Math.max(2, Math.floor(sp.h / 5));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < 2; c++) ctx.fillRect(X - w * 0.3 + c * w * 0.4, Y - h + (r + 0.5) * (h / (rows + 0.4)), w * 0.2, Math.max(1, h / (rows * 2.6)));
+    } else if (sp.shape === 'factory') {                  // wide hall, sawtooth roof, chimney
+      ctx.fillStyle = '#8a8f98'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+      ctx.fillStyle = '#6a6e77'; const n = 4, sw = w / n;
+      for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.moveTo(X - w / 2 + i * sw, Y - h); ctx.lineTo(X - w / 2 + i * sw + sw, Y - h - sw * 0.5); ctx.lineTo(X - w / 2 + i * sw + sw, Y - h); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle = '#5f636b'; ctx.fillRect(X + w / 2 - S(5), Y - h - S(9), S(3.5), S(9));
+      ctx.fillStyle = 'rgba(220,220,220,.5)'; ctx.beginPath(); ctx.arc(X + w / 2 - S(3.2), Y - h - S(10), S(3), 0, 7); ctx.fill();
+    } else if (sp.shape === 'shop') {                     // market with awning
+      ctx.fillStyle = '#cdb277'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+      ctx.fillStyle = '#4e8cbf'; ctx.fillRect(X - w / 2, Y - h, w, Math.max(2, h * 0.24));
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(X - w * 0.12, Y - h * 0.5, w * 0.24, h * 0.5);
+    } else if (sp.shape === 'lab') {                      // domed research hall
+      ctx.fillStyle = '#cdd6e2'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+      ctx.fillStyle = '#5fb0c9'; ctx.beginPath(); ctx.arc(X, Y - h, w * 0.42, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+      ctx.fillStyle = 'rgba(20,40,60,.4)'; for (let c = 0; c < 2; c++) ctx.fillRect(X - w * 0.28 + c * w * 0.36, Y - h * 0.55, w * 0.2, h * 0.4);
+    } else if (sp.shape === 'church') {                   // nave + steeple
+      ctx.fillStyle = '#d3c7ab'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(X - w / 2 - 1, Y - h); ctx.lineTo(X, Y - h - w * 0.4); ctx.lineTo(X + w / 2 + 1, Y - h); ctx.closePath(); ctx.fill();
+      const stx = X - w / 2 + w * 0.2;
+      ctx.fillStyle = '#c9bd9f'; ctx.fillRect(stx - S(2), Y - h - S(12), S(4), S(12));
+      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(stx - S(3), Y - h - S(12)); ctx.lineTo(stx, Y - h - S(18)); ctx.lineTo(stx + S(3), Y - h - S(12)); ctx.closePath(); ctx.fill();
+    } else if (sp.shape === 'plant') {                    // two cooling towers
+      [-1, 1].forEach((s) => {
+        const cx = X + s * w * 0.22;
+        ctx.fillStyle = '#aab0b6'; ctx.beginPath();
+        ctx.moveTo(cx - w * 0.16, Y); ctx.lineTo(cx - w * 0.1, Y - h); ctx.lineTo(cx + w * 0.1, Y - h); ctx.lineTo(cx + w * 0.16, Y); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx, Y - h, w * 0.1, w * 0.04, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(230,230,230,.5)'; ctx.beginPath(); ctx.arc(cx, Y - h - S(4), S(3.2), 0, 7); ctx.fill();
+      });
     }
     ctx.restore();
   }
-  const MAP_VERSION = 'v7';
+  const MAP_VERSION = 'v9';
   // tiny seeded RNG so the surrounding countryside is stable across redraws
   function rng(seed) {
     return function () {
@@ -344,13 +363,29 @@ window.UI = (function () {
     for (let y = 0; y <= h; y += 6) { const c = cx + Math.sin(y * 0.035) * 10; (y === 0 ? ctx.moveTo : ctx.lineTo).call(ctx, c, y); }
     ctx.stroke();
   }
-  // Dashed lane markings down the interior streets — the key "this is a road map" cue.
-  function drawStreets(ctx, tl, tt, dW, dH, cols, rows, blockSize, road) {
-    ctx.save(); if (ctx.setLineDash) ctx.setLineDash([4, 5]);
-    ctx.strokeStyle = 'rgba(232,212,120,.5)'; ctx.lineWidth = 1;
-    for (let c = 1; c < cols; c++) { const x = tl + c * (blockSize + road) - road / 2; ctx.beginPath(); ctx.moveTo(x, tt); ctx.lineTo(x, tt + dH); ctx.stroke(); }
-    for (let r = 1; r < rows; r++) { const y = tt + r * (blockSize + road) - road / 2; ctx.beginPath(); ctx.moveTo(tl, y); ctx.lineTo(tl + dW, y); ctx.stroke(); }
-    if (ctx.setLineDash) ctx.setLineDash([]); ctx.restore();
+  // Organic, non-grid placement: each building buds off an existing one (vertical bias),
+  // so the town sprawls naturally like a settlement that grew over time.
+  function layoutTown(items, seed) {
+    const r = rng(seed), placed = [], GAP = 4;
+    const collide = (x, y, w, d) => {
+      for (const p of placed) { if (Math.abs(x - p.x) < (w + p.w) / 2 + GAP && Math.abs(y - p.y) < (d + p.d) / 2 + GAP) return true; }
+      return false;
+    };
+    for (let idx = 0; idx < items.length; idx++) {
+      const sp = items[idx].spec, b = items[idx].b;
+      if (!placed.length) { placed.push({ x: 0, y: 0, w: sp.w, d: sp.d, b }); continue; }
+      let done = false;
+      for (let a = 0; a < 50 && !done; a++) {
+        const anchor = placed[(r() * placed.length) | 0];
+        const ang = r() * Math.PI * 2;
+        const dist = (Math.max(anchor.w, anchor.d) + Math.max(sp.w, sp.d)) / 2 + GAP + r() * 6;
+        const x = anchor.x + Math.cos(ang) * dist;
+        const y = anchor.y + Math.sin(ang) * dist * 1.35;   // taller-than-wide spread
+        if (!collide(x, y, sp.w, sp.d)) { placed.push({ x, y, w: sp.w, d: sp.d, b }); done = true; }
+      }
+      if (!done) { let my = -1e9; for (const p of placed) my = Math.max(my, p.y); placed.push({ x: (r() - 0.5) * 60, y: my + sp.d + GAP, w: sp.w, d: sp.d, b }); }
+    }
+    return placed;
   }
   function renderMap() {
     const s = Engine.state; if (!s) return;
@@ -371,46 +406,41 @@ window.UI = (function () {
     const era = ERAS[s.eraIndex].id;
     const T = TERRAIN[era] || TERRAIN.medieval;
 
-    // ---- layout: a river on the left, the town (city blocks) to its right ----
-    const riverZone = 46, pad = 12, outer = 10;
-    const plot = 26, pg = 2, BN = 3, blockSize = BN * plot + (BN - 1) * pg; // 82
-    const road = 12;
-    const areaX = riverZone + pad;
-    const areaW = cssW - areaX - pad;
-    const bpr = Math.max(1, Math.floor((areaW - outer * 2 + road) / (blockSize + road)));
-    const blocks = Math.max(1, Math.ceil(Math.max(total, 1) / (BN * BN)));
-    const devCols = Math.min(blocks, bpr);
-    const devRows = Math.ceil(blocks / bpr);
-    const devW = devCols * (blockSize + road) - road;
-    const devH = devRows * (blockSize + road) - road;
-    const cssH = pad * 2 + outer * 2 + devH;
+    const riverZone = 40, pad = 12;
+    const areaX = riverZone + pad, areaW = Math.max(120, cssW - areaX - pad);
+
+    // organic world-space layout, then scale to fit width
+    const placed = layoutTown(tiles.map((b) => ({ b, spec: bSpec(b) })), 100 + s.settlement.length * 7);
+    let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    placed.forEach((p) => {
+      const sp = bSpec(p.b);
+      minX = Math.min(minX, p.x - sp.w / 2 - 2); maxX = Math.max(maxX, p.x + sp.w / 2 + 2);
+      minY = Math.min(minY, p.y - sp.d / 2 - sp.h - sp.w * 0.6 - 6); maxY = Math.max(maxY, p.y + sp.d / 2 + 4);
+    });
+    if (!isFinite(minX)) { minX = 0; maxX = 10; minY = 0; maxY = 10; }
+    const worldW = Math.max(10, maxX - minX), worldH = Math.max(10, maxY - minY);
+    const scale = Math.max(0.42, Math.min(1.15, areaW / worldW));
+    const drawW = worldW * scale, drawH = worldH * scale;
+    const cssH = Math.max(160, Math.round(drawH + pad * 2));
     canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
     canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const townLeft = areaX + outer + Math.max(0, (areaW - outer * 2 - devW) / 2);
-    const townTop = pad + outer;
-    const blockXY = (b) => ({ x: townLeft + (b % bpr) * (blockSize + road), y: townTop + ((b / bpr) | 0) * (blockSize + road) });
-    const occupied = (x, y) => x > townLeft - road && x < townLeft + devW + road && y > townTop - road && y < townTop + devH + road;
+    const offX = areaX + (areaW - drawW) / 2 - minX * scale;
+    const offY = pad - minY * scale;
+    const occupied = (x, y) => x > areaX - 8 && y > pad - 4 && y < pad + drawH + 4;
 
-    // 1) countryside, then the river over the left margin
+    // terrain, river, then a meandering main road behind the town
     drawCountryside(ctx, cssW, cssH, era, T.grass, occupied);
     drawRiver(ctx, riverZone / 2, cssH, era);
-    // 2) paved town base framing the blocks
-    roundRect(ctx, townLeft - road / 2, townTop - road / 2, devW + road, devH + road, 8);
-    ctx.fillStyle = T.road; ctx.fill();
-    // 3) blocks + building rooftops
-    for (let b = 0; b < blocks; b++) {
-      const o = blockXY(b);
-      roundRect(ctx, o.x, o.y, blockSize, blockSize, 4); ctx.fillStyle = T.lot; ctx.fill();
-      for (let p = 0; p < BN * BN; p++) {
-        const idx = b * BN * BN + p;
-        const px = o.x + (p % BN) * (plot + pg), py = o.y + ((p / BN) | 0) * (plot + pg);
-        if (idx < total) drawBuilding(ctx, tiles[idx], px, py, plot);
-      }
-    }
-    // 4) street lane markings on top of the road grid
-    drawStreets(ctx, townLeft, townTop, devW, devH, devCols, devRows, blockSize, road);
+    ctx.strokeStyle = T.road; ctx.lineWidth = Math.max(4, 7 * scale); ctx.lineCap = 'round'; ctx.beginPath();
+    for (let yy = pad; yy <= pad + drawH; yy += 8) { const xx = areaX + areaW * 0.5 + Math.sin(yy * 0.03) * areaW * 0.28; (yy === pad ? ctx.moveTo : ctx.lineTo).call(ctx, xx, yy); }
+    ctx.stroke();
+
+    // buildings painted back-to-front so nearer ones overlap correctly
+    placed.slice().sort((a, b) => a.y - b.y).forEach((p) => {
+      drawBuilding(ctx, p.b, offX + p.x * scale, offY + p.y * scale, scale);
+    });
   }
 
   /* ---------- tabs ---------- */

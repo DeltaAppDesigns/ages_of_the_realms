@@ -1,4 +1,4 @@
-/* build 2026-06-08b */
+/* build 2026-06-08e */
 /* Buildings.
    cost      : one-time build cost (scaled by costScale^(owned))
    upkeep    : resources consumed every year (fixed, not job-scaled)
@@ -56,6 +56,8 @@ window.GAME_BUILDINGS = [
     cost:{materials:48, coin:30}, costScale:1.16, jobs:4, produces:{coin:12}, happiness:-1 },
   { id:'public_school', name:'Public School', icon:'🏫', era:'industrial', tech:'public_education', desc:'Educates the masses and lifts morale.',
     cost:{materials:42, coin:35}, costScale:1.2, jobs:2, produces:{knowledge:12}, happiness:2 },
+  { id:'mechanized_farm', name:'Mechanized Farm', icon:'🚜', era:'industrial', tech:'mechanization', desc:'Tractors and threshers work the land. Food at industrial scale.',
+    cost:{materials:45, coin:35}, costScale:1.16, jobs:3, produces:{food:22} },
 
   /* ---------- MODERN ---------- */
   { id:'hospital', name:'Hospital', icon:'🏥', era:'modern', tech:'medicine', desc:'Modern care. People live longer and happier.',
@@ -70,6 +72,10 @@ window.GAME_BUILDINGS = [
     cost:{materials:90, coin:40}, costScale:1.12, housing:60 },
   { id:'park', name:'City Park', icon:'🌳', era:'modern', tech:'civic_planning', desc:'Green space to breathe. A civic treasure.',
     cost:{materials:40, coin:30}, costScale:1.22, happiness:7 },
+  { id:'greenhouse', name:'Greenhouse Complex', icon:'🌱', era:'modern', tech:'agriscience', desc:'Climate-controlled growing. A rich harvest every season.',
+    cost:{materials:60, coin:45}, costScale:1.17, jobs:3, produces:{food:36}, happiness:1 },
+  { id:'composite_works', name:'Composite Works', icon:'🛠️', era:'modern', tech:'materials_science', desc:'Engineered alloys and polymers. Materials in volume.',
+    cost:{materials:55, coin:50}, costScale:1.17, jobs:4, produces:{materials:28} },
 
   /* ---------- INFORMATION AGE ---------- */
   { id:'data_center', name:'Data Center', icon:'🖥️', era:'information', tech:'internet', desc:'The network\'s beating heart. Pumps out data and revenue.',
@@ -81,9 +87,11 @@ window.GAME_BUILDINGS = [
   { id:'maglev', name:'Maglev Line', icon:'🚄', era:'information', tech:'maglev_tech', desc:'Frictionless transit. The megacity glides.',
     cost:{materials:100, coin:90}, costScale:1.18, jobs:3, produces:{coin:22}, happiness:6 },
   { id:'recycling_center', name:'Recycling Center', icon:'♻️', era:'information', tech:'recycling', desc:'Waste becomes material. The city heals itself.',
-    cost:{materials:80, coin:70}, costScale:1.16, jobs:2, produces:{materials:18}, happiness:5 },
+    cost:{materials:80, coin:70}, costScale:1.16, jobs:3, produces:{materials:32}, happiness:5 },
   { id:'ai_lab', name:'AI Lab', icon:'🧠', era:'information', tech:'artificial_intelligence', desc:'Thinking machines accelerate everything.',
     cost:{materials:130, coin:120}, costScale:1.2, jobs:4, produces:{knowledge:34, coin:10} },
+  { id:'vertical_farm', name:'Vertical Farm', icon:'🌿', era:'information', tech:'vertical_farming', desc:'Stacked hydroponic towers feed the megacity on a tiny footprint.',
+    cost:{materials:100, coin:80}, costScale:1.16, jobs:2, produces:{food:55} },
 
   /* ---------- SPACE AGE ---------- */
   { id:'arcology', name:'Arcology', icon:'🌆', era:'space', tech:'mega_arcology', desc:'A self-contained city within a single structure.',
@@ -97,5 +105,7 @@ window.GAME_BUILDINGS = [
   { id:'antimatter_plant', name:'Antimatter Plant', icon:'🔆', era:'space', tech:'antimatter', desc:'Bottled starfire. Stupendous power, slight unease.',
     cost:{materials:230, coin:210}, costScale:1.18, jobs:4, produces:{coin:60}, happiness:-2 },
   { id:'quantum_lab', name:'Quantum Lab', icon:'🔬', era:'space', tech:'quantum_computing', desc:'Computation beyond comprehension. Knowledge floods in.',
-    cost:{materials:200, coin:190}, costScale:1.2, jobs:4, produces:{knowledge:50} }
+    cost:{materials:200, coin:190}, costScale:1.2, jobs:4, produces:{knowledge:50} },
+  { id:'nanofabricator', name:'Nanofabricator', icon:'⚙️', era:'space', tech:'nanotech', desc:'Builds raw materials atom by atom — an almost limitless supply.',
+    cost:{materials:180, coin:150}, costScale:1.18, jobs:3, produces:{materials:60} }
 ];

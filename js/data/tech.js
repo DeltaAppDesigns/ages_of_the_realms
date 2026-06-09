@@ -1,4 +1,4 @@
-/* build 2026-06-08b */
+/* build 2026-06-08e */
 /* Tech tree.
    cost            : knowledge to research
    prereq          : tech ids that must be researched first
@@ -48,6 +48,8 @@ window.GAME_TECH = [
     desc:'Vaccines and surgery. Unlocks Hospitals. A key to the Modern Era.', unlocks:['hospital'] },
   { id:'computing', name:'Computing', icon:'🖥️', era:'industrial', cost:185, prereq:['electricity','public_education'],
     desc:'The information age dawns. Unlocks Tech Parks. A key to the Modern Era.', unlocks:['tech_park'] },
+  { id:'mechanization', name:'Mechanization', icon:'🚜', era:'industrial', cost:120, prereq:['steam_power'],
+    desc:'Machines do the heavy labour. Unlocks the Mechanized Farm. +25% food.', unlocks:['mechanized_farm'], bonus:{type:'food_mult', value:0.25} },
 
   /* ----- Modern ----- */
   { id:'renewables', name:'Renewable Energy', icon:'🔋', era:'modern', cost:200, prereq:['electricity'],
@@ -66,6 +68,10 @@ window.GAME_TECH = [
   { id:'fusion', name:'Fusion Power', icon:'⚛️', era:'modern', cost:350, prereq:['renewables'],
     desc:'A star in a bottle. Unlocks Fusion Plants. +5 mood. A key to the Information Age.',
     unlocks:['fusion_plant'], bonus:{type:'happiness_flat', value:5} },
+  { id:'agriscience', name:'Agricultural Science', icon:'🌱', era:'modern', cost:210, prereq:['mechanization'],
+    desc:'High-yield crops and greenhouses. Unlocks the Greenhouse Complex. +25% food.', unlocks:['greenhouse'], bonus:{type:'food_mult', value:0.25} },
+  { id:'materials_science', name:'Materials Science', icon:'🛠️', era:'modern', cost:230, prereq:['electricity'],
+    desc:'Engineered alloys and composites. Unlocks Composite Works. +25% materials.', unlocks:['composite_works'], bonus:{type:'materials_mult', value:0.25} },
 
   /* ----- Information Age ----- */
   { id:'artificial_intelligence', name:'Artificial Intelligence', icon:'🧠', era:'information', cost:430, prereq:['internet'],
@@ -78,8 +84,11 @@ window.GAME_TECH = [
     desc:'Nothing is wasted. Unlocks Recycling Centers. +5 mood.', unlocks:['recycling_center'], bonus:{type:'happiness_flat', value:5} },
   { id:'space_flight', name:'Space Flight', icon:'🚀', era:'information', cost:540, prereq:['internet','fusion'],
     desc:'Beyond the sky. Unlocks Spaceports. A key to the Space Age.', unlocks:['spaceport'] },
+  { id:'vertical_farming', name:'Vertical Farming', icon:'🌿', era:'information', cost:400, prereq:['agriscience'],
+    desc:'Farms that climb skyward. Unlocks the Vertical Farm. +30% food.', unlocks:['vertical_farm'], bonus:{type:'food_mult', value:0.30} },
   { id:'nanotech', name:'Nanotechnology', icon:'🔩', era:'information', cost:580, prereq:['artificial_intelligence'],
-    desc:'Engineering atom by atom. +20% to all output. A key to the Space Age.', bonus:{type:'all_mult', value:0.20} },
+    desc:'Engineering atom by atom. Unlocks the Nanofabricator. +20% to all output. A key to the Space Age.',
+    unlocks:['nanofabricator'], bonus:{type:'all_mult', value:0.20} },
 
   /* ----- Space Age ----- */
   { id:'terraforming', name:'Terraforming', icon:'🌍', era:'space', cost:640, prereq:['space_flight'],

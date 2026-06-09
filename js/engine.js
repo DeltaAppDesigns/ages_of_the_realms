@@ -1,4 +1,4 @@
-/* build 2026-06-08b */
+/* build 2026-06-08e */
 /* Game engine: state, yearly simulation, building, research, eras, events. */
 window.Engine = (function () {
   const RES = window.GAME_RESOURCES;
