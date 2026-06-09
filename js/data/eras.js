@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Eras in order. The engine advances when `advance` requirements are met. */
 window.GAME_ERAS = [
   {

@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Story & crisis events.
    type   : 'story'  -> fires deterministically the first year its cond() is true
             'random' -> rolls in the random-event pool (crises / boons)

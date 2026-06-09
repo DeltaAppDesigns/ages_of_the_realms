@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Rendering layer. Reads Engine.state; delegates interactions to window.App. */
 window.UI = (function () {
   const RES = window.GAME_RESOURCES;
@@ -167,11 +167,20 @@ window.UI = (function () {
         kv('Materials', netStr('materials')) +
         kv('Knowledge', netStr('knowledge')) +
       '</div>' +
-      '<div class="summary-block"><h3>Workforce & Housing</h3>' +
-        kv('Jobs filled', (st.employed || 0) + ' / ' + (st.jobs || 0)) +
-        kv('Housing used', Math.round(s.res.population) + ' / ' + (st.housing || 0)) +
-        kv('Open homes', (st.housingFree || 0)) +
-      '</div>' +
+      (function () {
+        const pop = Math.round(s.res.population), beds = st.housing || 0;
+        const homeless = Math.max(0, pop - beds);
+        const hv = homeless > 0
+          ? '<span class="v" style="color:var(--bad)">' + homeless + ' ⚠️</span>'
+          : '<span class="v" style="color:var(--good)">0 ✓</span>';
+        return '<div class="summary-block"><h3>Workforce & Housing</h3>' +
+          kv('Jobs filled', (st.employed || 0) + ' / ' + (st.jobs || 0)) +
+          kv('Beds (housing)', beds) +
+          kv('People housed', Math.min(pop, beds) + ' / ' + pop) +
+          kv('Open beds', st.housingFree || 0) +
+          '<div class="kv"><span>Homeless</span>' + hv + '</div>' +
+        '</div>';
+      })() +
       pathBlock;
   }
 
@@ -221,101 +230,182 @@ window.UI = (function () {
     ctx.closePath();
   }
   // Footprint + silhouette spec per building. w,d = footprint; h = oblique height.
+  // Each building id gets its own shape so the map shows real variety.
   function bSpec(b) {
-    const k = mapKind(b);
-    if (k === 'farm')  return { k, shape: 'field',   w: 30, d: 22, h: 0 };
-    if (k === 'park')  return { k, shape: 'park',    w: 26, d: 22, h: 0 };
-    if (k === 'solar') return { k, shape: 'solar',   w: 26, d: 20, h: 0 };
-    if (k === 'res') {
+    const k = mapKind(b), id = b.id;
+    const M = { // explicit per-building silhouettes
+      farm: 'field', mechanized_farm: 'field', orbital_farm: 'field',
+      granary: 'silo', windmill: 'mill', greenhouse: 'greenhouse', vertical_farm: 'greenhouse', bio_dome: 'dome',
+      lumber_camp: 'lumber', workshop: 'workshop', recycling_center: 'workshop',
+      market: 'market', bank: 'bank', textile_mill: 'factory',
+      factory: 'factory', steel_mill: 'factory', composite_works: 'factory', nanofabricator: 'factory',
+      rail_depot: 'depot', transit_hub: 'depot', maglev: 'depot', spaceport: 'launch',
+      chapel: 'church', watchtower: 'watch', theater: 'theater', hospital: 'hospital',
+      scholars_hall: 'study', university: 'study', public_school: 'study',
+      tech_park: 'lab', data_center: 'lab', ai_lab: 'lab', quantum_lab: 'lab',
+      fusion_plant: 'plant', antimatter_plant: 'plant', solar_array: 'solar', park: 'park'
+    };
+    const sizes = {
+      field: [30, 22, 0], park: [26, 22, 0], solar: [26, 20, 0],
+      silo: [18, 16, 16], mill: [15, 15, 24], greenhouse: [26, 18, 12], dome: [28, 24, 16],
+      lumber: [22, 18, 9], workshop: [22, 17, 12], market: [24, 16, 10], bank: [22, 16, 16],
+      factory: [28, 18, 13], depot: [30, 15, 11], launch: [24, 20, 28],
+      church: [18, 15, 15], watch: [13, 13, 26], theater: [24, 17, 14], hospital: [24, 18, 16],
+      study: [22, 16, 13], lab: [24, 17, 17], plant: [24, 20, 16]
+    };
+    if (vertical_farm_is(id)) return { k, shape: 'greenhouse', w: 18, d: 16, h: 42 };
+    if (M[id]) { const s = sizes[M[id]] || [20, 15, 13]; return { k, shape: M[id], w: s[0], d: s[1], h: s[2] }; }
+    if (k === 'res' || b.housing) {
       const housing = b.housing || 4;
       if (housing <= 8) return { k, shape: 'house', w: 16, d: 13, h: 10 };
       const t = Math.min(1, (housing - 8) / 60);
       return { k, shape: 'tower', w: 14 + t * 7, d: 12 + t * 4, h: 22 + t * 42 };
     }
-    if (k === 'ind')   return { k, shape: 'factory', w: 28, d: 18, h: 13 };
-    if (k === 'com')   return { k, shape: 'shop',    w: 20, d: 15, h: 13 };
-    if (k === 'sci')   return { k, shape: 'lab',     w: 22, d: 16, h: 19 };
-    if (k === 'civic') return { k, shape: 'church',  w: 18, d: 15, h: 15 };
-    if (k === 'power') return { k, shape: 'plant',   w: 24, d: 20, h: 16 };
-    return { k, shape: 'house', w: 16, d: 13, h: 10 };
+    if (k === 'farm') return { k, shape: 'field', w: 30, d: 22, h: 0 };
+    if (k === 'ind') return { k, shape: 'factory', w: 28, d: 18, h: 13 };
+    if (k === 'sci') return { k, shape: 'lab', w: 24, d: 17, h: 17 };
+    if (k === 'civic') return { k, shape: 'church', w: 18, d: 15, h: 15 };
+    if (k === 'power') return { k, shape: 'plant', w: 24, d: 20, h: 16 };
+    return { k, shape: 'market', w: 20, d: 15, h: 12 };
   }
+  function vertical_farm_is(id) { return id === 'vertical_farm'; }
+
   // Draw a distinct, lightly-3D building centred at base point (X,Y), scaled by `scale`.
   function drawBuilding(ctx, b, X, Y, scale) {
-    const sp = bSpec(b);
+    const sp = bSpec(b), sh = sp.shape;
     const w = sp.w * scale, d = sp.d * scale, h = sp.h * scale, eraIdx = eraIndexById(b.era);
     const S = (v) => v * scale;
+    const L = X - w / 2, R = X + w / 2, TOP = Y - h;
     ctx.save();
-    if (sp.shape === 'field') {                           // crop field + barn
-      ctx.fillStyle = '#6f9b43'; ctx.fillRect(X - w / 2, Y - d / 2, w, d);
-      ctx.strokeStyle = '#577d32'; ctx.lineWidth = 1;
-      for (let r = 1; r <= 3; r++) { const ly = Y - d / 2 + d * r / 4; ctx.beginPath(); ctx.moveTo(X - w / 2 + 1, ly); ctx.lineTo(X + w / 2 - 1, ly); ctx.stroke(); }
-      ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.strokeRect(X - w / 2, Y - d / 2, w, d);
-      ctx.fillStyle = '#9a5a3a'; ctx.fillRect(X + w / 2 - S(7), Y - d / 2 + 1, S(6), S(5));
-      ctx.restore(); return;
-    }
-    if (sp.shape === 'park') {
-      ctx.fillStyle = '#4f8a3f'; roundRect(ctx, X - w / 2, Y - d / 2, w, d, S(4)); ctx.fill();
-      [[0.3, 0.35], [0.7, 0.4], [0.5, 0.72]].forEach((t) => drawTree(ctx, X - w / 2 + w * t[0], Y - d / 2 + d * t[1], S(3.2), 'medieval'));
-      ctx.restore(); return;
-    }
-    if (sp.shape === 'solar') {
-      ctx.fillStyle = '#16263d'; ctx.fillRect(X - w / 2, Y - d / 2, w, d);
-      ctx.fillStyle = '#3a6ea5';
-      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) ctx.fillRect(X - w / 2 + 2 + c * (w - 4) / 3, Y - d / 2 + 2 + r * (d - 4) / 3, (w - 4) / 3 - 1.5, (d - 4) / 3 - 1.5);
-      ctx.restore(); return;
-    }
-    // ground shadow for raised buildings
-    ctx.fillStyle = 'rgba(0,0,0,.16)';
-    ctx.beginPath(); ctx.ellipse(X + d * 0.12, Y, w * 0.6, d * 0.5, 0, 0, 7); ctx.fill();
-    const wallStroke = () => { ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.strokeRect(X - w / 2, Y - h, w, h); };
 
-    if (sp.shape === 'house') {                           // small gabled cottage
-      ctx.fillStyle = '#dccfb6'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
-      ctx.fillStyle = ERA_RES[eraIdx]; ctx.beginPath();
-      ctx.moveTo(X - w / 2 - 1, Y - h); ctx.lineTo(X, Y - h - w * 0.55); ctx.lineTo(X + w / 2 + 1, Y - h); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(X - w * 0.12, Y - h * 0.55, w * 0.24, h * 0.55);
-    } else if (sp.shape === 'tower') {                    // tall apartment / skyscraper
-      ctx.fillStyle = ERA_RES[eraIdx]; ctx.fillRect(X - w / 2, Y - h, w, h);
-      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(X + w / 2 - w * 0.18, Y - h, w * 0.18, h); wallStroke();
-      ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(X - w / 2, Y - h, w, Math.max(1.5, h * 0.05));
-      ctx.fillStyle = 'rgba(20,30,45,.5)';
-      const rows = Math.max(2, Math.floor(sp.h / 5));
-      for (let r = 0; r < rows; r++) for (let c = 0; c < 2; c++) ctx.fillRect(X - w * 0.3 + c * w * 0.4, Y - h + (r + 0.5) * (h / (rows + 0.4)), w * 0.2, Math.max(1, h / (rows * 2.6)));
-    } else if (sp.shape === 'factory') {                  // wide hall, sawtooth roof, chimney
-      ctx.fillStyle = '#8a8f98'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
+    // ---- flat ground parcels (no height) ----
+    if (sh === 'field') {
+      ctx.fillStyle = '#6f9b43'; ctx.fillRect(L, Y - d / 2, w, d);
+      ctx.strokeStyle = '#577d32'; ctx.lineWidth = 1;
+      for (let r = 1; r <= 3; r++) { const ly = Y - d / 2 + d * r / 4; ctx.beginPath(); ctx.moveTo(L + 1, ly); ctx.lineTo(R - 1, ly); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.strokeRect(L, Y - d / 2, w, d);
+      ctx.fillStyle = '#9a5a3a'; ctx.fillRect(R - S(7), Y - d / 2 + 1, S(6), S(5));
+      ctx.restore(); return;
+    }
+    if (sh === 'park') {
+      ctx.fillStyle = '#4f8a3f'; roundRect(ctx, L, Y - d / 2, w, d, S(4)); ctx.fill();
+      [[0.3, 0.35], [0.7, 0.4], [0.5, 0.72]].forEach((t) => drawTree(ctx, L + w * t[0], Y - d / 2 + d * t[1], S(3.2), 'medieval'));
+      ctx.restore(); return;
+    }
+    if (sh === 'solar') {
+      ctx.fillStyle = '#16263d'; ctx.fillRect(L, Y - d / 2, w, d);
+      ctx.fillStyle = '#3a6ea5';
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) ctx.fillRect(L + 2 + c * (w - 4) / 3, Y - d / 2 + 2 + r * (d - 4) / 3, (w - 4) / 3 - 1.5, (d - 4) / 3 - 1.5);
+      ctx.restore(); return;
+    }
+
+    // ground shadow + a reusable boxed wall
+    ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(X + d * 0.12, Y, w * 0.6, d * 0.5, 0, 0, 7); ctx.fill();
+    const box = (col) => { ctx.fillStyle = col; ctx.fillRect(L, TOP, w, h); ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(R - w * 0.16, TOP, w * 0.16, h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.strokeRect(L, TOP, w, h); };
+    const door = () => { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(X - w * 0.1, Y - h * 0.5, w * 0.2, h * 0.5); };
+
+    if (sh === 'house') {
+      ctx.fillStyle = '#dccfb6'; ctx.fillRect(L, TOP, w, h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.strokeRect(L, TOP, w, h);
+      ctx.fillStyle = ERA_RES[eraIdx]; ctx.beginPath(); ctx.moveTo(L - 1, TOP); ctx.lineTo(X, TOP - w * 0.55); ctx.lineTo(R + 1, TOP); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke(); door();
+    } else if (sh === 'tower') {
+      box(ERA_RES[eraIdx]);
+      ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(L, TOP, w, Math.max(1.5, h * 0.05));
+      ctx.fillStyle = 'rgba(20,30,45,.5)'; const rows = Math.max(2, Math.floor(sp.h / 5));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < 2; c++) ctx.fillRect(X - w * 0.3 + c * w * 0.4, TOP + (r + 0.5) * (h / (rows + 0.4)), w * 0.2, Math.max(1, h / (rows * 2.6)));
+    } else if (sh === 'factory') {
+      box('#8a8f98');
       ctx.fillStyle = '#6a6e77'; const n = 4, sw = w / n;
-      for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.moveTo(X - w / 2 + i * sw, Y - h); ctx.lineTo(X - w / 2 + i * sw + sw, Y - h - sw * 0.5); ctx.lineTo(X - w / 2 + i * sw + sw, Y - h); ctx.closePath(); ctx.fill(); }
-      ctx.fillStyle = '#5f636b'; ctx.fillRect(X + w / 2 - S(5), Y - h - S(9), S(3.5), S(9));
-      ctx.fillStyle = 'rgba(220,220,220,.5)'; ctx.beginPath(); ctx.arc(X + w / 2 - S(3.2), Y - h - S(10), S(3), 0, 7); ctx.fill();
-    } else if (sp.shape === 'shop') {                     // market with awning
-      ctx.fillStyle = '#cdb277'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
-      ctx.fillStyle = '#4e8cbf'; ctx.fillRect(X - w / 2, Y - h, w, Math.max(2, h * 0.24));
-      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(X - w * 0.12, Y - h * 0.5, w * 0.24, h * 0.5);
-    } else if (sp.shape === 'lab') {                      // domed research hall
-      ctx.fillStyle = '#cdd6e2'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
-      ctx.fillStyle = '#5fb0c9'; ctx.beginPath(); ctx.arc(X, Y - h, w * 0.42, Math.PI, 0); ctx.fill();
+      for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.moveTo(L + i * sw, TOP); ctx.lineTo(L + i * sw + sw, TOP - sw * 0.5); ctx.lineTo(L + i * sw + sw, TOP); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle = '#5f636b'; ctx.fillRect(R - S(5), TOP - S(9), S(3.5), S(9));
+      ctx.fillStyle = 'rgba(220,220,220,.5)'; ctx.beginPath(); ctx.arc(R - S(3.2), TOP - S(10), S(3), 0, 7); ctx.fill();
+    } else if (sh === 'market') {                          // striped market stalls
+      ctx.fillStyle = '#b79256'; ctx.fillRect(L, Y - h * 0.5, w, h * 0.5);
+      const n = 3, sw = w / n;
+      for (let i = 0; i < n; i++) { ctx.fillStyle = (i % 2 ? '#d9d2c4' : '#c0533f'); ctx.fillRect(L + i * sw, TOP, sw, h * 0.55); }
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.strokeRect(L, TOP, w, h);
+    } else if (sh === 'bank') {                            // columned facade + pediment
+      box('#d8d2c2');
+      ctx.fillStyle = '#c9b27a'; ctx.beginPath(); ctx.moveTo(L - 1, TOP); ctx.lineTo(X, TOP - w * 0.3); ctx.lineTo(R + 1, TOP); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; for (let c = 0; c < 4; c++) ctx.fillRect(L + w * (0.14 + c * 0.22), TOP + h * 0.18, w * 0.06, h * 0.7);
+    } else if (sh === 'silo') {                            // grain silos + barn
+      ctx.fillStyle = '#9a5a3a'; ctx.fillRect(L, Y - h * 0.55, w * 0.46, h * 0.55);  // barn
+      ctx.fillStyle = '#6f3f28'; ctx.beginPath(); ctx.moveTo(L, Y - h * 0.55); ctx.lineTo(L + w * 0.23, Y - h * 0.8); ctx.lineTo(L + w * 0.46, Y - h * 0.55); ctx.closePath(); ctx.fill();
+      [0.62, 0.84].forEach((fx) => { const cx = L + w * fx, cw = w * 0.16; ctx.fillStyle = '#cdbb8e'; ctx.fillRect(cx - cw / 2, TOP + S(3), cw, h - S(3)); ctx.beginPath(); ctx.arc(cx, TOP + S(3), cw / 2, Math.PI, 0); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke(); });
+    } else if (sh === 'mill') {                            // windmill tower + sails
+      ctx.fillStyle = '#cdbb95'; ctx.beginPath(); ctx.moveTo(L, Y); ctx.lineTo(X - w * 0.2, TOP); ctx.lineTo(X + w * 0.2, TOP); ctx.lineTo(R, Y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.stroke();
+      ctx.strokeStyle = '#5a4a32'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(X - S(8), TOP - S(8)); ctx.lineTo(X + S(8), TOP + S(8)); ctx.moveTo(X - S(8), TOP + S(8)); ctx.lineTo(X + S(8), TOP - S(8)); ctx.stroke();
+    } else if (sh === 'greenhouse') {                      // glass house / vertical farm
+      ctx.fillStyle = '#bfe3d0'; ctx.fillRect(L, TOP, w, h); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.strokeRect(L, TOP, w, h);
+      ctx.strokeStyle = 'rgba(90,150,120,.6)'; ctx.lineWidth = 1;
+      for (let gy = TOP + S(4); gy < Y; gy += S(5)) { ctx.beginPath(); ctx.moveTo(L, gy); ctx.lineTo(R, gy); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(120,200,150,.5)'; ctx.fillRect(L + 1, Y - S(4), w - 2, S(3));
+    } else if (sh === 'dome') {                            // geodesic bio-dome
+      ctx.fillStyle = '#a9d8c6'; ctx.beginPath(); ctx.arc(X, Y, w * 0.5, Math.PI, 0); ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
-      ctx.fillStyle = 'rgba(20,40,60,.4)'; for (let c = 0; c < 2; c++) ctx.fillRect(X - w * 0.28 + c * w * 0.36, Y - h * 0.55, w * 0.2, h * 0.4);
-    } else if (sp.shape === 'church') {                   // nave + steeple
-      ctx.fillStyle = '#d3c7ab'; ctx.fillRect(X - w / 2, Y - h, w, h); wallStroke();
-      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(X - w / 2 - 1, Y - h); ctx.lineTo(X, Y - h - w * 0.4); ctx.lineTo(X + w / 2 + 1, Y - h); ctx.closePath(); ctx.fill();
-      const stx = X - w / 2 + w * 0.2;
-      ctx.fillStyle = '#c9bd9f'; ctx.fillRect(stx - S(2), Y - h - S(12), S(4), S(12));
-      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(stx - S(3), Y - h - S(12)); ctx.lineTo(stx, Y - h - S(18)); ctx.lineTo(stx + S(3), Y - h - S(12)); ctx.closePath(); ctx.fill();
-    } else if (sp.shape === 'plant') {                    // two cooling towers
+      ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); ctx.moveTo(X - w * 0.5, Y); ctx.lineTo(X + w * 0.5, Y); ctx.moveTo(X, Y); ctx.lineTo(X, Y - w * 0.5); ctx.moveTo(X - w * 0.35, Y - w * 0.35); ctx.lineTo(X + w * 0.35, Y - w * 0.35); ctx.stroke();
+    } else if (sh === 'lumber') {                          // log cabin + log piles
+      ctx.fillStyle = '#9a6b3f'; ctx.fillRect(L, TOP, w * 0.6, h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.strokeRect(L, TOP, w * 0.6, h);
+      ctx.fillStyle = '#6f4a28'; ctx.beginPath(); ctx.moveTo(L - 1, TOP); ctx.lineTo(L + w * 0.3, TOP - h * 0.5); ctx.lineTo(L + w * 0.6 + 1, TOP); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#b07d4a'; for (let i = 0; i < 3; i++) ctx.fillRect(R - w * 0.34, Y - S(3) - i * S(3), w * 0.32, S(2.4));
+    } else if (sh === 'workshop') {                        // craft hall + gear
+      box('#b98b54');
+      ctx.fillStyle = '#7a5a30'; ctx.beginPath(); ctx.moveTo(L - 1, TOP); ctx.lineTo(X, TOP - w * 0.32); ctx.lineTo(R + 1, TOP); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(40,30,18,.6)'; ctx.beginPath(); ctx.arc(X, Y - h * 0.5, Math.min(w, h) * 0.16, 0, 7); ctx.fill();
+    } else if (sh === 'depot') {                           // transit platform + vehicle
+      ctx.fillStyle = '#9a9388'; ctx.fillRect(L, Y - h * 0.4, w, h * 0.4);          // platform
+      const vc = (eraIdx >= 4) ? '#5fb0c9' : '#7d5a3a';
+      ctx.fillStyle = vc; roundRect(ctx, L + w * 0.08, TOP, w * 0.84, h * 0.7, S(3)); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.stroke();
+      ctx.fillStyle = 'rgba(20,30,40,.5)'; for (let c = 0; c < 4; c++) ctx.fillRect(L + w * (0.16 + c * 0.2), TOP + h * 0.18, w * 0.1, h * 0.3);
+    } else if (sh === 'launch') {                          // spaceport pad + rocket
+      ctx.fillStyle = '#7a7d82'; ctx.fillRect(L, Y - h * 0.18, w, h * 0.18);
+      ctx.fillStyle = '#e7e7ee'; ctx.fillRect(X - S(3), TOP + S(4), S(6), h - S(4));  // body
+      ctx.fillStyle = '#c0533f'; ctx.beginPath(); ctx.moveTo(X - S(3), TOP + S(4)); ctx.lineTo(X, TOP - S(3)); ctx.lineTo(X + S(3), TOP + S(4)); ctx.closePath(); ctx.fill(); // nose
+      ctx.fillStyle = '#b0b4ba'; ctx.beginPath(); ctx.moveTo(X - S(3), Y - S(2)); ctx.lineTo(X - S(7), Y); ctx.lineTo(X - S(3), Y - h * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(X + S(3), Y - S(2)); ctx.lineTo(X + S(7), Y); ctx.lineTo(X + S(3), Y - h * 0.3); ctx.closePath(); ctx.fill();
+    } else if (sh === 'church') {
+      box('#d3c7ab');
+      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(L - 1, TOP); ctx.lineTo(X, TOP - w * 0.4); ctx.lineTo(R + 1, TOP); ctx.closePath(); ctx.fill();
+      const stx = L + w * 0.2;
+      ctx.fillStyle = '#c9bd9f'; ctx.fillRect(stx - S(2), TOP - S(12), S(4), S(12));
+      ctx.fillStyle = '#9466b8'; ctx.beginPath(); ctx.moveTo(stx - S(3), TOP - S(12)); ctx.lineTo(stx, TOP - S(18)); ctx.lineTo(stx + S(3), TOP - S(12)); ctx.closePath(); ctx.fill();
+    } else if (sh === 'watch') {                           // stone watchtower + crenellations
+      ctx.fillStyle = '#b9b2a2'; ctx.fillRect(L, TOP, w, h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.strokeRect(L, TOP, w, h);
+      ctx.fillStyle = '#9a937f'; for (let c = 0; c < 3; c++) ctx.fillRect(L + c * (w / 3), TOP - S(3), w / 3 - S(1.2), S(3));
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(X - S(1.5), Y - h * 0.5, S(3), h * 0.3);
+    } else if (sh === 'theater') {                         // marquee
+      box('#caa6c0');
+      ctx.fillStyle = '#e6c84a'; ctx.fillRect(L, Y - h * 0.34, w, h * 0.2);
+      ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let c = 0; c < 5; c++) ctx.beginPath(), ctx.arc(L + w * (0.12 + c * 0.19), Y - h * 0.24, S(1), 0, 7), ctx.fill();
+    } else if (sh === 'hospital') {
+      box('#e8e8ee');
+      ctx.fillStyle = '#d54b4b'; const cs = Math.min(w, h) * 0.26;
+      ctx.fillRect(X - cs * 0.16, Y - h * 0.7, cs * 0.32, cs); ctx.fillRect(X - cs * 0.5, Y - h * 0.7 + cs * 0.34, cs, cs * 0.32);
+    } else if (sh === 'study') {                           // scholarly hall + cupola
+      box('#d3cab0');
+      ctx.fillStyle = '#b6a981'; ctx.fillRect(L, TOP, w, S(2.5));
+      ctx.fillStyle = '#8a6f9c'; ctx.beginPath(); ctx.arc(X, TOP, w * 0.16, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = 'rgba(20,40,60,.35)'; for (let c = 0; c < 3; c++) ctx.fillRect(L + w * (0.16 + c * 0.28), Y - h * 0.55, w * 0.14, h * 0.45);
+    } else if (sh === 'lab') {                             // modern research, dome + antenna
+      box('#cdd6e2');
+      ctx.fillStyle = '#5fb0c9'; ctx.beginPath(); ctx.arc(X, TOP, w * 0.4, Math.PI, 0); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+      ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(R - S(3), TOP); ctx.lineTo(R - S(3), TOP - S(7)); ctx.stroke();
+      ctx.fillStyle = '#d54b4b'; ctx.beginPath(); ctx.arc(R - S(3), TOP - S(7), S(1.4), 0, 7); ctx.fill();
+    } else if (sh === 'plant') {                           // cooling towers
       [-1, 1].forEach((s) => {
         const cx = X + s * w * 0.22;
-        ctx.fillStyle = '#aab0b6'; ctx.beginPath();
-        ctx.moveTo(cx - w * 0.16, Y); ctx.lineTo(cx - w * 0.1, Y - h); ctx.lineTo(cx + w * 0.1, Y - h); ctx.lineTo(cx + w * 0.16, Y); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#aab0b6'; ctx.beginPath(); ctx.moveTo(cx - w * 0.16, Y); ctx.lineTo(cx - w * 0.1, TOP); ctx.lineTo(cx + w * 0.1, TOP); ctx.lineTo(cx + w * 0.16, Y); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
-        ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx, Y - h, w * 0.1, w * 0.04, 0, 0, 7); ctx.fill();
-        ctx.fillStyle = 'rgba(230,230,230,.5)'; ctx.beginPath(); ctx.arc(cx, Y - h - S(4), S(3.2), 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx, TOP, w * 0.1, w * 0.04, 0, 0, 7); ctx.fill();
+        ctx.fillStyle = 'rgba(230,230,230,.5)'; ctx.beginPath(); ctx.arc(cx, TOP - S(4), S(3.2), 0, 7); ctx.fill();
       });
-    }
+    } else { box('#b9ab93'); }
     ctx.restore();
   }
-  const MAP_VERSION = 'v9';
+  const MAP_VERSION = 'v10';
   // tiny seeded RNG so the surrounding countryside is stable across redraws
   function rng(seed) {
     return function () {
@@ -363,27 +453,26 @@ window.UI = (function () {
     for (let y = 0; y <= h; y += 6) { const c = cx + Math.sin(y * 0.035) * 10; (y === 0 ? ctx.moveTo : ctx.lineTo).call(ctx, c, y); }
     ctx.stroke();
   }
-  // Organic, non-grid placement: each building buds off an existing one (vertical bias),
-  // so the town sprawls naturally like a settlement that grew over time.
+  // Central old-town that grows outward: buildings are placed in build order on a
+  // golden-angle spiral, so the earliest (oldest) sit at the core and newer ones ring
+  // outward — organic, non-grid, and clearly a city radiating from its centre.
   function layoutTown(items, seed) {
-    const r = rng(seed), placed = [], GAP = 4;
+    const r = rng(seed), placed = [], GAP = 4, GA = 2.399963;
+    let avg = 0; items.forEach((it) => { avg += Math.max(it.spec.w, it.spec.d); });
+    avg = avg / Math.max(1, items.length);
+    const base = Math.max(8, avg * 0.6);
     const collide = (x, y, w, d) => {
       for (const p of placed) { if (Math.abs(x - p.x) < (w + p.w) / 2 + GAP && Math.abs(y - p.y) < (d + p.d) / 2 + GAP) return true; }
       return false;
     };
-    for (let idx = 0; idx < items.length; idx++) {
-      const sp = items[idx].spec, b = items[idx].b;
-      if (!placed.length) { placed.push({ x: 0, y: 0, w: sp.w, d: sp.d, b }); continue; }
-      let done = false;
-      for (let a = 0; a < 50 && !done; a++) {
-        const anchor = placed[(r() * placed.length) | 0];
-        const ang = r() * Math.PI * 2;
-        const dist = (Math.max(anchor.w, anchor.d) + Math.max(sp.w, sp.d)) / 2 + GAP + r() * 6;
-        const x = anchor.x + Math.cos(ang) * dist;
-        const y = anchor.y + Math.sin(ang) * dist * 1.35;   // taller-than-wide spread
-        if (!collide(x, y, sp.w, sp.d)) { placed.push({ x, y, w: sp.w, d: sp.d, b }); done = true; }
-      }
-      if (!done) { let my = -1e9; for (const p of placed) my = Math.max(my, p.y); placed.push({ x: (r() - 0.5) * 60, y: my + sp.d + GAP, w: sp.w, d: sp.d, b }); }
+    for (let i = 0; i < items.length; i++) {
+      const sp = items[i].spec, b = items[i].b;
+      if (i === 0) { placed.push({ x: 0, y: 0, w: sp.w, d: sp.d, b }); continue; }
+      const ang = i * GA + r() * 0.35;
+      let rad = base * Math.sqrt(i + 0.5);
+      let x = Math.cos(ang) * rad, y = Math.sin(ang) * rad, guard = 0;
+      while (collide(x, y, sp.w, sp.d) && guard++ < 80) { rad += 2.5; x = Math.cos(ang) * rad; y = Math.sin(ang) * rad; }
+      placed.push({ x, y, w: sp.w, d: sp.d, b });
     }
     return placed;
   }
@@ -393,8 +482,12 @@ window.UI = (function () {
     BUILDINGS.forEach((b) => { const n = s.buildings[b.id] || 0; for (let i = 0; i < n; i++) tiles.push(b); });
     const total = tiles.length;
     const types = Object.keys(s.buildings).filter((k) => s.buildings[k] > 0).length;
+    const beds = (s.stats && s.stats.housing) || 0, homeless = Math.max(0, Math.round(s.res.population) - beds);
+    const bedTag = homeless > 0
+      ? ' · <span style="color:var(--bad)">⚠ ' + homeless + ' homeless</span>'
+      : ' · <span style="color:var(--good)">🛏 ' + ((s.stats && s.stats.housingFree) || 0) + ' free</span>';
     $('map-head').innerHTML = '<b>' + s.settlement + '</b> · ' + ERAS[s.eraIndex].name +
-      ' · ' + total + ' buildings (' + types + ' kinds) · pop ' + Math.round(s.res.population) +
+      ' · ' + total + ' buildings · pop ' + Math.round(s.res.population) + bedTag +
       ' <span style="opacity:.5">· map ' + MAP_VERSION + '</span>';
 
     const canvas = $('map-canvas');

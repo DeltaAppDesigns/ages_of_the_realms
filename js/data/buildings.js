@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Buildings.
    cost      : one-time build cost (scaled by costScale^(owned))
    upkeep    : resources consumed every year (fixed, not job-scaled)

@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Tech tree.
    cost            : knowledge to research
    prereq          : tech ids that must be researched first

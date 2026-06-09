@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Persistence via localStorage. State is plain serializable data. */
 window.Save = (function () {
   const KEY = 'aotr_save_v1';

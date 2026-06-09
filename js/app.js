@@ -1,4 +1,4 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Bootstrap: wires the DOM, drives the game loop, registers the service worker. */
 window.App = (function () {
   const $ = (id) => document.getElementById(id);

@@ -1,4 +1,4 @@
-<!-- build 2026-06-08e -->
+<!-- build 2026-06-08f -->
 # Ages of the Realm
 
 A text-based, story-driven **city builder** that evolves through history — from a medieval hamlet all the way to a star-faring metropolis. It runs entirely in your browser, **works fully offline**, and installs on your iPhone home screen like a real app. No App Store, no Mac, no build tools.

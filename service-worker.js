@@ -1,6 +1,6 @@
-/* build 2026-06-08e */
+/* build 2026-06-08f */
 /* Ages of the Realm — offline service worker (cache-first). */
-const CACHE = 'realm-v9';
+const CACHE = 'realm-v10';
 
 /* All paths are relative so the app works from any GitHub Pages subpath. */
 const ASSETS = [
