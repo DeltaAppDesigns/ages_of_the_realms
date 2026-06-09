@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Tech tree.
    cost            : knowledge to research
    prereq          : tech ids that must be researched first
@@ -58,5 +59,37 @@ window.GAME_TECH = [
   { id:'skyscrapers', name:'Skyscrapers', icon:'🏙️', era:'modern', cost:230, prereq:['mass_transit'],
     desc:'Build to the sky. Unlocks Apartment Towers.', unlocks:['apartment'] },
   { id:'automation', name:'Automation', icon:'🤖', era:'modern', cost:280, prereq:['computing','renewables'],
-    desc:'Machines that build machines. +40% materials and coin.', bonus:{type:'all_mult', value:0.20} }
+    desc:'Machines that build machines. +20% to all output.', bonus:{type:'all_mult', value:0.20} },
+  { id:'internet', name:'The Network', icon:'🌐', era:'modern', cost:330, prereq:['computing'],
+    desc:'Everything, connected. Unlocks Data Centers. +30% knowledge. A key to the Information Age.',
+    unlocks:['data_center'], bonus:{type:'knowledge_mult', value:0.30} },
+  { id:'fusion', name:'Fusion Power', icon:'⚛️', era:'modern', cost:350, prereq:['renewables'],
+    desc:'A star in a bottle. Unlocks Fusion Plants. +5 mood. A key to the Information Age.',
+    unlocks:['fusion_plant'], bonus:{type:'happiness_flat', value:5} },
+
+  /* ----- Information Age ----- */
+  { id:'artificial_intelligence', name:'Artificial Intelligence', icon:'🧠', era:'information', cost:430, prereq:['internet'],
+    desc:'Minds of silicon. Unlocks AI Labs. +15% to all output.', unlocks:['ai_lab'], bonus:{type:'all_mult', value:0.15} },
+  { id:'maglev_tech', name:'Maglev Transit', icon:'🚄', era:'information', cost:390, prereq:['mass_transit'],
+    desc:'The city moves at a hum. Unlocks Maglev Lines.', unlocks:['maglev'] },
+  { id:'arcology_design', name:'Arcology Design', icon:'🏢', era:'information', cost:410, prereq:['skyscrapers'],
+    desc:'Cities that stand on end. Unlocks Smart Towers.', unlocks:['smart_tower'] },
+  { id:'recycling', name:'Closed-Loop Recycling', icon:'♻️', era:'information', cost:370, prereq:['fusion'],
+    desc:'Nothing is wasted. Unlocks Recycling Centers. +5 mood.', unlocks:['recycling_center'], bonus:{type:'happiness_flat', value:5} },
+  { id:'space_flight', name:'Space Flight', icon:'🚀', era:'information', cost:540, prereq:['internet','fusion'],
+    desc:'Beyond the sky. Unlocks Spaceports. A key to the Space Age.', unlocks:['spaceport'] },
+  { id:'nanotech', name:'Nanotechnology', icon:'🔩', era:'information', cost:580, prereq:['artificial_intelligence'],
+    desc:'Engineering atom by atom. +20% to all output. A key to the Space Age.', bonus:{type:'all_mult', value:0.20} },
+
+  /* ----- Space Age ----- */
+  { id:'terraforming', name:'Terraforming', icon:'🌍', era:'space', cost:640, prereq:['space_flight'],
+    desc:'Make new worlds bloom. Unlocks Orbital Farms and Bio-Domes.', unlocks:['orbital_farm','bio_dome'] },
+  { id:'mega_arcology', name:'Mega-Arcology', icon:'🌆', era:'space', cost:680, prereq:['arcology_design'],
+    desc:'A city in a single tower. Unlocks Arcologies.', unlocks:['arcology'] },
+  { id:'antimatter', name:'Antimatter Power', icon:'🔆', era:'space', cost:720, prereq:['nanotech'],
+    desc:'The ultimate energy. Unlocks Antimatter Plants. +30% coin.', unlocks:['antimatter_plant'], bonus:{type:'coin_mult', value:0.30} },
+  { id:'quantum_computing', name:'Quantum Computing', icon:'🔬', era:'space', cost:740, prereq:['nanotech'],
+    desc:'Compute the impossible. Unlocks Quantum Labs. +40% knowledge.', unlocks:['quantum_lab'], bonus:{type:'knowledge_mult', value:0.40} },
+  { id:'singularity', name:'The Singularity', icon:'✨', era:'space', cost:950, prereq:['quantum_computing','antimatter'],
+    desc:'Progress beyond measure. +30% to all output. The pinnacle of your realm.', bonus:{type:'all_mult', value:0.30} }
 ];

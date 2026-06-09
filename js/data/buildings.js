@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Buildings.
    cost      : one-time build cost (scaled by costScale^(owned))
    upkeep    : resources consumed every year (fixed, not job-scaled)
@@ -68,5 +69,33 @@ window.GAME_BUILDINGS = [
   { id:'apartment', name:'Apartment Tower', icon:'🏬', era:'modern', tech:'skyscrapers', desc:'Houses thousands on a small footprint.',
     cost:{materials:90, coin:40}, costScale:1.12, housing:60 },
   { id:'park', name:'City Park', icon:'🌳', era:'modern', tech:'civic_planning', desc:'Green space to breathe. A civic treasure.',
-    cost:{materials:40, coin:30}, costScale:1.22, happiness:7 }
+    cost:{materials:40, coin:30}, costScale:1.22, happiness:7 },
+
+  /* ---------- INFORMATION AGE ---------- */
+  { id:'data_center', name:'Data Center', icon:'🖥️', era:'information', tech:'internet', desc:'The network\'s beating heart. Pumps out data and revenue.',
+    cost:{materials:110, coin:90}, costScale:1.18, jobs:5, produces:{knowledge:24, coin:16} },
+  { id:'fusion_plant', name:'Fusion Plant', icon:'⚛️', era:'information', tech:'fusion', desc:'Limitless clean power. The city runs without a cough.',
+    cost:{materials:120, coin:110}, costScale:1.17, jobs:3, produces:{coin:30}, happiness:4 },
+  { id:'smart_tower', name:'Smart Tower', icon:'🏢', era:'information', tech:'arcology_design', desc:'Vertical neighborhoods that house thousands.',
+    cost:{materials:130, coin:60}, costScale:1.12, housing:90, happiness:1 },
+  { id:'maglev', name:'Maglev Line', icon:'🚄', era:'information', tech:'maglev_tech', desc:'Frictionless transit. The megacity glides.',
+    cost:{materials:100, coin:90}, costScale:1.18, jobs:3, produces:{coin:22}, happiness:6 },
+  { id:'recycling_center', name:'Recycling Center', icon:'♻️', era:'information', tech:'recycling', desc:'Waste becomes material. The city heals itself.',
+    cost:{materials:80, coin:70}, costScale:1.16, jobs:2, produces:{materials:18}, happiness:5 },
+  { id:'ai_lab', name:'AI Lab', icon:'🧠', era:'information', tech:'artificial_intelligence', desc:'Thinking machines accelerate everything.',
+    cost:{materials:130, coin:120}, costScale:1.2, jobs:4, produces:{knowledge:34, coin:10} },
+
+  /* ---------- SPACE AGE ---------- */
+  { id:'arcology', name:'Arcology', icon:'🌆', era:'space', tech:'mega_arcology', desc:'A self-contained city within a single structure.',
+    cost:{materials:220, coin:120}, costScale:1.12, housing:200, happiness:3 },
+  { id:'spaceport', name:'Spaceport', icon:'🚀', era:'space', tech:'space_flight', desc:'Gateway to the stars — and to vast new trade.',
+    cost:{materials:200, coin:180}, costScale:1.2, jobs:5, produces:{coin:45, knowledge:15} },
+  { id:'orbital_farm', name:'Orbital Farm', icon:'🛰️', era:'space', tech:'terraforming', desc:'Sunlit hydroponics in the sky feed millions.',
+    cost:{materials:160, coin:120}, costScale:1.16, jobs:3, produces:{food:60} },
+  { id:'bio_dome', name:'Bio-Dome', icon:'🌐', era:'space', tech:'terraforming', desc:'A sealed paradise of green. Food and joy in one.',
+    cost:{materials:150, coin:130}, costScale:1.18, jobs:2, produces:{food:30}, happiness:8 },
+  { id:'antimatter_plant', name:'Antimatter Plant', icon:'🔆', era:'space', tech:'antimatter', desc:'Bottled starfire. Stupendous power, slight unease.',
+    cost:{materials:230, coin:210}, costScale:1.18, jobs:4, produces:{coin:60}, happiness:-2 },
+  { id:'quantum_lab', name:'Quantum Lab', icon:'🔬', era:'space', tech:'quantum_computing', desc:'Computation beyond comprehension. Knowledge floods in.',
+    cost:{materials:200, coin:190}, costScale:1.2, jobs:4, produces:{knowledge:50} }
 ];

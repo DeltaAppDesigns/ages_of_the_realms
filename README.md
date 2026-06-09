@@ -1,26 +1,28 @@
+<!-- build 2026-06-08b -->
 # Ages of the Realm
 
-A text-based, story-driven **city builder** that evolves through history — from a medieval hamlet to a modern metropolis. It runs entirely in your browser, **works fully offline**, and installs on your iPhone home screen like a real app. No App Store, no Mac, no build tools.
+A text-based, story-driven **city builder** that evolves through history — from a medieval hamlet all the way to a star-faring metropolis. It runs entirely in your browser, **works fully offline**, and installs on your iPhone home screen like a real app. No App Store, no Mac, no build tools.
 
 ---
 
 ## Play it
 
-Open `index.html` in any modern browser, or play the hosted version once you publish it (see below). Lead a single settlement across four ages:
+Open `index.html` in any modern browser, or play the hosted version once you publish it (see below). Lead a single settlement across **six ages**:
 
-**Medieval Age → Renaissance → Industrial Age → Modern Era**
+**Medieval → Renaissance → Industrial → Modern → Information → Space**
 
 ### How it works
 - **Advance Year** runs one turn: buildings produce and consume resources, your population grows or shrinks, and a story event may appear.
-- **Six resources:** 🌾 Food, 🪙 Coin, 🪵 Materials, 👤 People, 😊 Mood, 📜 Knowledge.
-- **Build** farms, homes, markets, workshops, factories and more. Each building needs workers (jobs) and many provide housing. People need food and a roof, or your city starves and empties.
-- **Research** spends Knowledge to unlock new buildings and bonuses. Certain "key" techs (plus a population threshold) are required to enter the next age.
-- **Story events** present choices with real consequences — welcome a wanderer, fight off raiders, fund a genius, weather a plague, decide your city's future. Your choices ripple through the chronicle.
+- **Six resources:** 🌾 Food, 🪙 Coin, 🪵 Materials, 👤 People, 😊 Mood, 📜 Knowledge. Keep timber and coin flowing — lumber camps and markets feed each other, so don't let either hit zero.
+- **Build** farms, homes, markets, workshops, factories, data centers, spaceports and more — 38 buildings across the ages. Each needs workers (jobs) and many provide housing. People need food and a roof, or your city starves and empties.
+- **Map tab** shows a top-down view of your city that fills in with every building you place, and recolors as you reach each new age.
+- **Research** spends Knowledge to unlock new buildings and bonuses (34 technologies). Certain "key" techs plus a population threshold are required to enter the next age.
+- **Story events** present choices with real consequences — welcome a wanderer, fight off raiders, weather a plague, hand the city to an AI, launch to the colonies. Your choices ripple through the chronicle.
 - **Auto** toggles automatic year-by-year advancement; it pauses whenever a decision needs you.
 - The game **auto-saves** every turn to your device. **Menu → Export** gives you a code you can paste back later or on another device.
 
 ### Goal
-Reach the **Modern Era** and build the greatest metropolis you can. Lose if your people ever fall to zero.
+Carry your realm across all six ages and reach the **Space Age**, then build the greatest star city you can. Lose if your people ever fall to zero.
 
 ---
 

@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Rendering layer. Reads Engine.state; delegates interactions to window.App. */
 window.UI = (function () {
   const RES = window.GAME_RESOURCES;
@@ -63,7 +64,7 @@ window.UI = (function () {
   function renderEraProgress() {
     const p = Engine.eraProgress(Engine.state);
     $('era-progress-fill').style.width = p.pct + '%';
-    if (!p.next) { $('era-progress-label').textContent = 'The Modern Era — the height of your realm'; return; }
+    if (!p.next) { $('era-progress-label').textContent = ERAS[Engine.state.eraIndex].name + ' — the pinnacle of your realm 🏆'; return; }
     let label = 'Toward the ' + p.next.name + ' — ';
     const bits = [];
     bits.push('People ' + Math.round(Engine.state.res.population) + '/' + p.popNeed);
@@ -147,9 +148,9 @@ window.UI = (function () {
         kv('Research left', p.techsLeft.length ? p.techsLeft.join(', ') : 'Done') +
         '</div>';
     } else {
-      pathBlock = '<div class="summary-block"><h3>The Modern Era</h3>' +
-        kv('Status', 'Pinnacle reached 🏆') +
-        kv('Keep building', 'Grow your metropolis as large as you dare') +
+      pathBlock = '<div class="summary-block"><h3>' + ERAS[s.eraIndex].name + '</h3>' +
+        kv('Status', 'Final age reached 🏆') +
+        kv('Keep building', 'Grow your star city as large as you dare') +
         '</div>';
     }
 
@@ -183,6 +184,31 @@ window.UI = (function () {
     ).join('');
   }
 
+  /* ---------- city map (top-down emoji tiles) ---------- */
+  function renderMap() {
+    const s = Engine.state;
+    const tiles = [];
+    // BUILDINGS is era-ordered, so iterating it clusters similar structures into "districts"
+    BUILDINGS.forEach((b) => {
+      const n = s.buildings[b.id] || 0;
+      for (let i = 0; i < n; i++) tiles.push({ e: b.icon, name: b.name });
+    });
+    const total = tiles.length;
+    const types = Object.keys(s.buildings).filter((k) => s.buildings[k] > 0).length;
+    $('map-head').innerHTML = '<b>' + s.settlement + '</b> · ' + ERAS[s.eraIndex].name +
+      ' · ' + total + ' buildings (' + types + ' kinds) · pop ' + Math.round(s.res.population);
+
+    if (!total) {
+      $('city-map').innerHTML = '<div class="map-empty">Your land is empty. Build something on the Build tab to watch your realm take shape here.</div>';
+      return;
+    }
+    const ground = ERA_GROUND[ERAS[s.eraIndex].id] || '🌿';
+    const pad = Math.max(10, Math.ceil(total * 0.4));
+    let html = tiles.map((t) => '<div class="tile bld" title="' + t.name + '">' + t.e + '</div>').join('');
+    for (let i = 0; i < pad; i++) html += '<div class="tile ground">' + ground + '</div>';
+    $('city-map').innerHTML = html;
+  }
+
   /* ---------- tabs ---------- */
   function setTab(tab) {
     activeTab = tab;
@@ -193,6 +219,7 @@ window.UI = (function () {
   }
   function renderActive() {
     if (activeTab === 'build') renderBuildings();
+    else if (activeTab === 'map') renderMap();
     else if (activeTab === 'tech') renderTech();
     else if (activeTab === 'city') renderCity();
     else if (activeTab === 'log') renderLog();
@@ -205,7 +232,9 @@ window.UI = (function () {
     updateAdvanceState();
   }
 
-  const ERA_BG = { medieval: '#1a1410', renaissance: '#15161f', industrial: '#14130f', modern: '#0c1116' };
+  const ERA_BG = { medieval: '#1a1410', renaissance: '#15161f', industrial: '#14130f', modern: '#0c1116',
+                   information: '#0a1016', space: '#0b0a16' };
+  const ERA_GROUND = { medieval: '🌿', renaissance: '🌳', industrial: '🪨', modern: '▫️', information: '⬛', space: '🌑' };
   function setEraTheme() {
     const era = ERAS[Engine.state.eraIndex].id;
     document.body.setAttribute('data-era', era);

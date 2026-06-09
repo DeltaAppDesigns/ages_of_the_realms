@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Game engine: state, yearly simulation, building, research, eras, events. */
 window.Engine = (function () {
   const RES = window.GAME_RESOURCES;
@@ -179,7 +180,7 @@ window.Engine = (function () {
     const techOk = req.techs.every((t) => s.tech[t]);
     if (popOk && techOk) {
       s.eraIndex += 1;
-      if (s.eraIndex >= 3) s.victory = true;
+      if (s.eraIndex >= ERAS.length - 1) s.victory = true;
       addLog(s, 'Your realm enters the ' + next.name + '!', 'log-story');
       return true;
     }

@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Resource definitions. Order = display order in the resource bar. */
 window.GAME_RESOURCES = [
   { id: 'food',       name: 'Food',      icon: '🌾', start: 90,  desc: 'Feeds your people. Run out and they starve.' },

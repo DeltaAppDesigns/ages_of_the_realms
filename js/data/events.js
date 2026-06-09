@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* Story & crisis events.
    type   : 'story'  -> fires deterministically the first year its cond() is true
             'random' -> rolls in the random-event pool (crises / boons)
@@ -268,6 +269,85 @@
           effects:{ coin:-10, knowledge:20 } },
         { text:'Wish them luck.', log:'You wish the inventor well and keep your coin.', logClass:'log-neutral',
           effects:{} }
+      ]
+    },
+
+    /* ===================== INFORMATION AGE ===================== */
+    {
+      id:'era_information', type:'story', once:true, cond:(s)=> s.eraIndex >= 4,
+      title:'The Information Age', icon:'🌐',
+      body:'The network awakens. Every citizen carries the world in their pocket; data hums beneath the streets and AI quietly runs a thousand systems at once. Your metropolis has become something new — a megacity that never sleeps.',
+      choices:[
+        { text:'Step into the future.', log:'★ The Information Age begins. The megacity comes online.', logClass:'log-story',
+          effects:{ knowledge:60, coin:80, happiness:6 } }
+      ]
+    },
+    {
+      id:'ai_dilemma', type:'story', once:true, cond:(s)=> s.eraIndex >= 4 && has(s,'ai_lab'),
+      title:'The Machine Asks', icon:'🤖',
+      body:'Your most advanced AI proposes optimizing the entire city itself — faster, cleaner, but with fewer human hands on the controls. The council is split.',
+      choices:[
+        { text:'Let the AI run things.', log:'You hand the AI the keys. Efficiency soars; some feel uneasy.', logClass:'log-good',
+          effects:{ coin:50, knowledge:40, happiness:-6 }, flags:{ aiGoverned:true } },
+        { text:'Keep humans in charge.', log:'You keep people at the helm. Slower, but the city trusts you.', logClass:'log-good',
+          effects:{ happiness:10, knowledge:-10 }, flags:{ humanGoverned:true } }
+      ]
+    },
+    {
+      id:'data_breach', type:'random', weight:10, once:false,
+      cond:(s)=> s.eraIndex >= 4 && has(s,'data_center'),
+      title:'A Data Breach', icon:'🔓',
+      body:'Hackers crack the city network and hold its systems hostage. The clock is ticking.',
+      choices:[
+        { text:'Pay the ransom.', log:'You pay to restore the network. Costly, but quick.', logClass:'log-bad',
+          effects:{ coin:-50 } },
+        { text:'Rebuild the defenses.', log:'You refuse and rebuild. A hard week, but the city is stronger for it.', logClass:'log-bad',
+          effects:{ knowledge:-20, happiness:-6 } }
+      ]
+    },
+    {
+      id:'power_demand', type:'random', weight:10, once:false,
+      cond:(s)=> s.eraIndex >= 3 && s.res.population >= 250 && !has(s,'fusion_plant'),
+      title:'The Grid Strains', icon:'🔌',
+      body:'Demand outpaces the power supply and brownouts roll across the districts. People want a fix.',
+      choices:[
+        { text:'Invest in new capacity.', log:'You expand the grid. The lights stay on.', logClass:'log-good',
+          effects:{ coin:-35, happiness:5 } },
+        { text:'Ration power for now.', log:'You ration power. It holds, but tempers fray.', logClass:'log-bad',
+          effects:{ happiness:-8 } }
+      ]
+    },
+
+    /* ===================== SPACE AGE ===================== */
+    {
+      id:'era_space', type:'story', once:true, cond:(s)=> s.eraIndex >= 5,
+      title:'★ The Space Age ★', icon:'🚀',
+      body:'From a muddy hilltop hamlet to a city that touches orbit. Spaceports launch into the dark, arcologies pierce the clouds, and your people — millions of them — look up at worlds yet to come.\n\nYou have led your realm across a thousand years and every age of progress. This is the pinnacle. Build on, pioneer — the stars are only the beginning.',
+      choices:[
+        { text:'Reach for the stars.', log:'★★ The Space Age begins. Your realm has reached the pinnacle of history. ★★', logClass:'log-story',
+          effects:{ knowledge:120, coin:150, happiness:12 }, flags:{ reachedSpace:true } }
+      ]
+    },
+    {
+      id:'first_launch', type:'random', weight:11, once:false,
+      cond:(s)=> s.eraIndex >= 5 && has(s,'spaceport'),
+      title:'Launch Day', icon:'🛰️',
+      body:'Crowds gather as your city launches a new mission to the outer colonies. The whole realm holds its breath.',
+      choices:[
+        { text:'A flawless launch!', log:'The launch is a triumph. Pride and profit rain down.', logClass:'log-good',
+          effects:{ coin:90, knowledge:40, happiness:10 } }
+      ]
+    },
+    {
+      id:'orbital_incident', type:'random', weight:7, once:false,
+      cond:(s)=> s.eraIndex >= 5 && has(s,'antimatter_plant'),
+      title:'Containment Warning', icon:'⚠️',
+      body:'An antimatter containment field flickers dangerously. Engineers need a decision now.',
+      choices:[
+        { text:'Shut it down safely.', log:'You shut the plant down to be safe. Power dips for a while.', logClass:'log-bad',
+          effects:{ coin:-40, happiness:-2 } },
+        { text:'Push the engineers to hold it.', log:'A tense night, but containment holds. The city exhales.', logClass:'log-good',
+          effects:{ knowledge:20, happiness:4 } }
       ]
     }
   ];

@@ -1,3 +1,4 @@
+/* build 2026-06-08b */
 /* ===== Ages of the Realm — styles ===== */
 :root {
   --bg: #1a1410;
@@ -21,6 +22,8 @@ body[data-era="medieval"]    { --accent:#d9a441; --accent-2:#e8c27a; --bg:#1a141
 body[data-era="renaissance"] { --accent:#c98a3a; --accent-2:#e0b06a; --bg:#15161f; --bg-2:#1d1f2b; --panel:#23263a; --panel-2:#2c3047; --line:#3a3f5c; }
 body[data-era="industrial"]  { --accent:#b8743a; --accent-2:#d99356; --bg:#14130f; --bg-2:#1c1a14; --panel:#262219; --panel-2:#302a1f; --line:#473d2c; }
 body[data-era="modern"]      { --accent:#34c7c0; --accent-2:#7fe3dd; --bg:#0c1116; --bg-2:#10171e; --panel:#152029; --panel-2:#1b2933; --line:#27414e; }
+body[data-era="information"] { --accent:#4fb8e6; --accent-2:#8fd6f5; --bg:#0a1016; --bg-2:#0f1822; --panel:#13202b; --panel-2:#1a2a38; --line:#284055; }
+body[data-era="space"]       { --accent:#9d7bff; --accent-2:#c3acff; --bg:#0b0a16; --bg-2:#120f22; --panel:#1a162e; --panel-2:#221d3a; --line:#3a3360; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; }
@@ -100,11 +103,11 @@ body {
 .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s ease; }
 
 /* ===== Tabs ===== */
-#tabs { display: flex; gap: 4px; padding: 8px 10px 0; }
+#tabs { display: flex; gap: 2px; padding: 8px 8px 0; }
 .tab {
-  flex: 1; font: inherit; font-weight: 600; font-size: 13px; color: var(--ink-dim);
+  flex: 1; font: inherit; font-weight: 600; font-size: 12px; color: var(--ink-dim);
   background: transparent; border: none; border-bottom: 2px solid transparent;
-  padding: 10px 4px; cursor: pointer;
+  padding: 10px 2px; cursor: pointer;
 }
 .tab.active { color: var(--accent-2); border-bottom-color: var(--accent); }
 
@@ -147,6 +150,27 @@ body {
 .log-good { border-left: 3px solid var(--good); }
 .log-bad { border-left: 3px solid var(--bad); }
 .log-story { border-left: 3px solid var(--accent); }
+
+/* ===== City Map ===== */
+#map-head { font-size: 13px; color: var(--ink-dim); margin-bottom: 10px; }
+#map-head b { color: var(--accent-2); }
+.city-map {
+  display: grid; gap: 3px;
+  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 8px;
+}
+.tile {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  border-radius: 5px; line-height: 1; user-select: none;
+}
+.tile.bld {
+  font-size: 17px; background: var(--panel-2); border: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(0,0,0,.3); animation: pop .25s ease;
+}
+.tile.ground { font-size: 13px; opacity: .35; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.map-empty { color: var(--ink-dim); font-size: 13px; text-align: center; padding: 24px 8px; }
 
 /* ===== Control bar ===== */
 #controlbar {

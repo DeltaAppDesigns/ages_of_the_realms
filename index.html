@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Ages of the Realm — build 2026-06-08b -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <title>Ages of the Realm</title>
@@ -53,14 +54,16 @@
     <!-- Tabs -->
     <nav id="tabs">
       <button class="tab active" data-tab="build">Build</button>
-      <button class="tab" data-tab="tech">Research</button>
+      <button class="tab" data-tab="map">Map</button>
+      <button class="tab" data-tab="tech">Tech</button>
       <button class="tab" data-tab="city">City</button>
-      <button class="tab" data-tab="log">Chronicle</button>
+      <button class="tab" data-tab="log">Log</button>
     </nav>
 
     <!-- Panels -->
     <div id="panels">
       <section id="tab-build" class="panel active"><div id="building-list" class="card-list"></div></section>
+      <section id="tab-map" class="panel"><div id="map-head"></div><div id="city-map" class="city-map"></div></section>
       <section id="tab-tech" class="panel"><div id="tech-list" class="card-list"></div></section>
       <section id="tab-city" class="panel"><div id="city-summary"></div></section>
       <section id="tab-log" class="panel"><div id="log-feed" class="log-feed"></div></section>
